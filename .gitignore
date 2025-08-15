@@ -1,0 +1,33 @@
+# Compiler files
+cache/
+out/
+
+# Ignores development broadcast logs
+broadcast
+
+
+# Dotenv file
+.env
+
+# Dependencies
+dependencies/
+node_modules/
+
+# MacOS
+.DS_Store
+
+# Misc
+playground/
+
+# Slither
+slither.db.json
+
+# Mutation Results
+mutation-results/
+
+# Documentation
+docs/generated/book
+docs/generated/book.css
+docs/generated/solidity.min.js
+docs/generated/book.toml
+docs/generated/.gitignore
