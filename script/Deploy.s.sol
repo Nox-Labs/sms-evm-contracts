@@ -8,10 +8,10 @@ import {Fork} from "../test/_utils/Fork.sol";
 import {console} from "forge-std/console.sol";
 import {addressToBytes32} from "../test/_utils/LayerZeroDevtoolsHelper.sol";
 
-import "./lib/RusdDeployer.sol";
+import "./lib/SMSDeployer.sol";
 
 contract Deploy is Script, FileHelpers, Fork {
-    using RusdDeployer for address;
+    using SMSDeployer for address;
 
     mapping(uint256 chainId => address lzEndpoint) public lzEndpoints;
 
@@ -52,38 +52,38 @@ contract Deploy is Script, FileHelpers, Fork {
         address create3Factory = readContractAddress(chainId, "Create3Factory");
         address lzEndpoint = lzEndpoints[chainId];
 
-        address rusdDataHub;
-        address rusd;
-        address yusd;
+        address smsDataHub;
+        address sms;
+        address mms;
         address omnichainAdapter;
 
         vm.startBroadcast(pk);
 
         if (chainId == MAIN_CHAIN_ID) {
-            (rusdDataHub, rusd, yusd, omnichainAdapter) =
+            (smsDataHub, sms, mms, omnichainAdapter) =
                 _mainChainDeploy(create3Factory, DEFAULT_ADMIN, MINTER, lzEndpoint);
         } else {
-            (rusdDataHub, rusd, omnichainAdapter) =
+            (smsDataHub, sms, omnichainAdapter) =
                 _peripheralChainDeploy(create3Factory, DEFAULT_ADMIN, MINTER, lzEndpoint);
         }
 
-        RUSDDataHub(rusdDataHub).setRUSD(address(rusd));
-        RUSDDataHub(rusdDataHub).setOmnichainAdapter(address(omnichainAdapter));
-        if (chainId == MAIN_CHAIN_ID) RUSDDataHubMainChain(rusdDataHub).setYUSD(address(yusd));
+        SMSDataHub(smsDataHub).setSMS(address(sms));
+        SMSDataHub(smsDataHub).setOmnichainAdapter(address(omnichainAdapter));
+        if (chainId == MAIN_CHAIN_ID) SMSDataHubMainChain(smsDataHub).setMMS(address(mms));
 
         vm.stopBroadcast();
 
-        writeContractAddress(chainId, rusd, "RUSD");
-        writeContractAddress(chainId, rusdDataHub, "RUSDDataHub");
-        writeContractAddress(chainId, omnichainAdapter, "RUSDOmnichainAdapter");
-        if (chainId == MAIN_CHAIN_ID) writeContractAddress(chainId, yusd, "YUSD");
+        writeContractAddress(chainId, sms, "SMS");
+        writeContractAddress(chainId, smsDataHub, "SMSDataHub");
+        writeContractAddress(chainId, omnichainAdapter, "SMSOmnichainAdapter");
+        if (chainId == MAIN_CHAIN_ID) writeContractAddress(chainId, mms, "MMS");
 
         _afterDeploy();
     }
 
     function wireOApps(uint32[] memory chains) public virtual {
-        RUSDOmnichainAdapter adapter =
-            RUSDOmnichainAdapter(readContractAddress(MAIN_CHAIN_ID, "RUSDOmnichainAdapter"));
+        SMSOmnichainAdapter adapter =
+            SMSOmnichainAdapter(readContractAddress(MAIN_CHAIN_ID, "SMSOmnichainAdapter"));
         for (uint256 i = 0; i < chains.length; i++) {
             fork(chains[i]);
             for (uint256 j = 0; j < chains.length; j++) {
@@ -102,10 +102,10 @@ contract Deploy is Script, FileHelpers, Fork {
         address defaultAdmin,
         address minter,
         address lzEndpoint
-    ) internal returns (address rusdDataHub, address rusd, address omnichainAdapter) {
-        rusdDataHub = create3Factory.deploy_RUSDDataHubMainChain(defaultAdmin, minter);
-        rusd = create3Factory.deploy_RUSD(rusdDataHub);
-        omnichainAdapter = create3Factory.deploy_RUSDOmnichainAdapter(rusdDataHub, lzEndpoint);
+    ) internal returns (address smsDataHub, address sms, address omnichainAdapter) {
+        smsDataHub = create3Factory.deploy_SMSDataHubMainChain(defaultAdmin, minter);
+        sms = create3Factory.deploy_SMS(smsDataHub);
+        omnichainAdapter = create3Factory.deploy_SMSOmnichainAdapter(smsDataHub, lzEndpoint);
     }
 
     function _mainChainDeploy(
@@ -113,15 +113,12 @@ contract Deploy is Script, FileHelpers, Fork {
         address defaultAdmin,
         address minter,
         address lzEndpoint
-    )
-        internal
-        returns (address rusdDataHub, address rusd, address yusd, address omnichainAdapter)
-    {
-        (rusdDataHub, rusd, omnichainAdapter) =
+    ) internal returns (address smsDataHub, address sms, address mms, address omnichainAdapter) {
+        (smsDataHub, sms, omnichainAdapter) =
             _peripheralChainDeploy(create3Factory, defaultAdmin, minter, lzEndpoint);
 
-        yusd = create3Factory.deploy_YUSD(
-            rusdDataHub, PERIOD_LENGTH, FIRST_ROUND_START_TIMESTAMP, ROUND_BP, ROUND_DURATION
+        mms = create3Factory.deploy_MMS(
+            smsDataHub, PERIOD_LENGTH, FIRST_ROUND_START_TIMESTAMP, ROUND_BP, ROUND_DURATION
         );
     }
 }

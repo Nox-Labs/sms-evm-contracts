@@ -5,8 +5,8 @@ import {Script} from "forge-std/Script.sol";
 import {FileHelpers} from "../test/_utils/FileHelpers.sol";
 import {Fork} from "../test/_utils/Fork.sol";
 
-import {RUSDDataHub} from "../src/RUSDDataHub.sol";
-import {PauseLevel} from "../src/interface/IRUSDDataHub.sol";
+import {SMSDataHub} from "../src/SMSDataHub.sol";
+import {PauseLevel} from "../src/interface/ISMSDataHub.sol";
 
 contract Pause is Script, FileHelpers, Fork {
     uint256 pk;
@@ -20,10 +20,10 @@ contract Pause is Script, FileHelpers, Fork {
     function run(uint32 chainId) public {
         fork(chainId);
 
-        address rusdDataHub = readContractAddress(block.chainid, "RUSDDataHub");
+        address smsDataHub = readContractAddress(block.chainid, "SMSDataHub");
 
         vm.broadcast(pk);
-        RUSDDataHub(rusdDataHub).setPauseLevel(pauseLevelToSet);
+        SMSDataHub(smsDataHub).setPauseLevel(pauseLevelToSet);
     }
 
     function run(uint32[] calldata chainIds) public {

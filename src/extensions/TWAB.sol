@@ -28,9 +28,9 @@ contract TWAB is Initializable, IERC20, Base {
         TwabLib.Account totalSupplyObservations;
     }
 
-    // keccak256(abi.encode(uint256(keccak256("twab.storage.TWAB")) - 1)) & ~bytes32(uint256(0xff))
+    // keccak256(abi.encode(uint256(keccak256("sms.storage.TWAB")) - 1)) & ~bytes32(uint256(0xff))
     bytes32 private constant TWABStorageLocation =
-        0xd5efd9e6f6b587af2e2d822068ce7fcce37c6c1290968041377a1bfb7c5a0900;
+        0xea00f3cc2ea487b4b4535d0c094117441b88a522a8d04a7af901690a99691f00;
 
     function _getTWABStorage() private pure returns (TWABStorage storage $) {
         assembly {

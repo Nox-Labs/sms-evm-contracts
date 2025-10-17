@@ -7,7 +7,7 @@ import {console} from "forge-std/console.sol";
 import {Deploy} from "./Deploy.s.sol";
 import {OFTMsgCodec} from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/libs/OFTMsgCodec.sol";
 
-import {RUSDOmnichainAdapter} from "../src/RUSDOmnichainAdapter.sol";
+import {SMSOmnichainAdapter} from "../src/SMSOmnichainAdapter.sol";
 
 contract WireOApps is Deploy {
     /**
@@ -17,8 +17,8 @@ contract WireOApps is Deploy {
      */
     function wireEVM(uint32[] memory chains) public {
         uint256 pk = vm.envUint("PRIVATE_KEY");
-        RUSDOmnichainAdapter adapter =
-            RUSDOmnichainAdapter(readContractAddress(MAIN_CHAIN_ID, "RUSDOmnichainAdapter"));
+        SMSOmnichainAdapter adapter =
+            SMSOmnichainAdapter(readContractAddress(MAIN_CHAIN_ID, "SMSOmnichainAdapter"));
         for (uint256 i = 0; i < chains.length; i++) {
             fork(chains[i]);
             for (uint256 j = 0; j < chains.length; j++) {
@@ -41,8 +41,8 @@ contract WireOApps is Deploy {
         public
     {
         uint256 pk = vm.envUint("PRIVATE_KEY");
-        RUSDOmnichainAdapter adapter =
-            RUSDOmnichainAdapter(readContractAddress(MAIN_CHAIN_ID, "RUSDOmnichainAdapter"));
+        SMSOmnichainAdapter adapter =
+            SMSOmnichainAdapter(readContractAddress(MAIN_CHAIN_ID, "SMSOmnichainAdapter"));
 
         for (uint256 i = 0; i < chains.length; i++) {
             fork(chains[i]);

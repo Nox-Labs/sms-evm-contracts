@@ -1,23 +1,23 @@
-# RUSD EVM Contracts
+# SMS EVM Contracts
 
 ## Overview
 
-This repository contains the Solidity smart contracts for the RUSD ecosystem. The core of the system revolves around two primary tokens:
+This repository contains the Solidity smart contracts for the SMS ecosystem. The core of the system revolves around two primary tokens:
 
-- **RUSD**: A omnichain stablecoin designed for consistent value.
-- **YUSD**: A yield-bearing token that allows holders to earn rewards.
+- **SMS**: A omnichain stablecoin designed for consistent value.
+- **MMS**: A yield-bearing token that allows holders to earn rewards.
 
-The system is built with omnichain capabilities using the LayerZero protocol, enabling seamless transfer of RUSD tokens across various blockchain networks. All core contracts are implemented using an upgradeable proxy pattern (UUPS) to allow for future improvements.
+The system is built with omnichain capabilities using the LayerZero protocol, enabling seamless transfer of SMS tokens across various blockchain networks. All core contracts are implemented using an upgradeable proxy pattern (UUPS) to allow for future improvements.
 
 ## Core Components
 
-- `RUSD.sol`: The implementation of the RUSD stablecoin, an ERC20 token with 6 decimals. Its supply is managed through restricted minting and burning operations. The contract also includes features for security and convenience, such as address blacklisting and EIP-2612 permit functionality.
+- `SMS.sol`: The implementation of the SMS stablecoin, an ERC20 token with 6 decimals. Its supply is managed through restricted minting and burning operations. The contract also includes features for security and convenience, such as address blacklisting and EIP-2612 permit functionality.
 
-- `YUSD.sol`: The implementation of the YUSD yield-bearing token. Holders earn rewards in RUSD based on their Time-Weighted Average Balance (TWAB). The reward system is structured into "rounds" with configurable APR and duration.
+- `MMS.sol`: The implementation of the MMS yield-bearing token. Holders earn rewards in SMS based on their Time-Weighted Average Balance (TWAB). The reward system is structured into "rounds" with configurable APR and duration.
 
-- `RUSDDataHub.sol`: A central registry and access control contract. It stores and manages the addresses of all critical system components, including the `RUSD` and `YUSD` contracts, the omnichain adapter, the administrator, and the minter. This simplifies contract interactions and centralizes configuration.
+- `SMSDataHub.sol`: A central registry and access control contract. It stores and manages the addresses of all critical system components, including the `SMS` and `MMS` contracts, the omnichain adapter, the administrator, and the minter. This simplifies contract interactions and centralizes configuration.
 
-- `RUSDOmnichainAdapter.sol`: A LayerZero OApp (Omnichain Application) that facilitates the cross-chain transfer of RUSD tokens. It handles the burning of tokens on a source chain and coordinates the minting of an equivalent amount on the destination chain.
+- `SMSOmnichainAdapter.sol`: A LayerZero OApp (Omnichain Application) that facilitates the cross-chain transfer of SMS tokens. It handles the burning of tokens on a source chain and coordinates the minting of an equivalent amount on the destination chain.
 
 ## Documentation
 
@@ -36,7 +36,7 @@ For a more in-depth understanding of the architecture, data flows, and core conc
 
     ```bash
     git clone <repository-url>
-    cd rusd-evm-contracts
+    cd sms-evm-contracts
     ```
 
 2.  Install the dependencies:
@@ -82,7 +82,7 @@ The contracts are deployed using Foundry scripts. The process is divided into se
 
 #### 1. Deploy Contracts
 
-Deploy the main contracts (RUSD, YUSD, etc.) to the desired network. Scripts are pre-configured for the following networks:
+Deploy the main contracts (SMS, MMS, etc.) to the desired network. Scripts are pre-configured for the following networks:
 
 - **Sepolia (Testnet)**
   ```bash
@@ -99,7 +99,7 @@ Deploy the main contracts (RUSD, YUSD, etc.) to the desired network. Scripts are
 
 #### 2. Configure Omnichain Communication
 
-After deploying the contracts to multiple chains, you must "wire" them to enable cross-chain functionality. This process sets the trusted peer addresses for the `RUSDOmnichainAdapter` on each chain.
+After deploying the contracts to multiple chains, you must "wire" them to enable cross-chain functionality. This process sets the trusted peer addresses for the `SMSOmnichainAdapter` on each chain.
 
 - **Wire EVM Chains**
 

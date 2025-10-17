@@ -1,30 +1,14 @@
 # TwabLib
-[Git Source](https://dapp-devs.com/ssh://git@git.2222/lumos-labs/rusd/rusd-contracts/rusd-evm-contracts/blob/c89eeb1e740ab933cc296c4ed9d03110b942680f/src/lib/TwabLib.sol)
 
-**Author:**
-PoolTogether Inc. & G9 Software Inc.
-
-This TwabLib adds on-chain historical lookups to a user(s) time-weighted average balance.
-Each user is mapped to an Account struct containing the TWAB history (ring buffer) and
-ring buffer parameters. Every token.transfer() creates a new TWAB checkpoint. The new
-TWAB checkpoint is stored in the circular ring buffer, as either a new checkpoint or
-rewriting a previous checkpoint with new parameters. One checkpoint per day is stored.
-The TwabLib guarantees minimum 1 year of search history.
-
-There are limitations to the Observation data structure used. Ensure your token is
-compatible before using this library. Ensure the date ranges you're relying on are
-within safe boundaries.
-
-*Time-Weighted Average Balance Library for ERC20 tokens.*
-
+[Git Source](https://github.com/Nox-Labs/sms-evm-contracts/blob/15a987dcda55f8dfabcf220505750bc01f9d6f51/src/lib/TwabLib.sol)
 
 ## Functions
+
 ### increaseBalances
 
 Increase a user's balance and delegate balance by a given amount.
 
-*This function mutates the provided account.*
-
+_This function mutates the provided account._
 
 ```solidity
 function increaseBalances(
@@ -41,31 +25,30 @@ function increaseBalances(
         AccountDetails memory accountDetails
     );
 ```
+
 **Parameters**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`periodLength`|`uint32`|The length of an overwrite period|
-|`periodOffset`|`uint32`|The offset of the first period|
-|`_account`|`Account`|The account to update|
-|`_amount`|`uint96`|The amount to increase the balance by|
+| Name           | Type      | Description                           |
+| -------------- | --------- | ------------------------------------- |
+| `periodLength` | `uint32`  | The length of an overwrite period     |
+| `periodOffset` | `uint32`  | The offset of the first period        |
+| `_account`     | `Account` | The account to update                 |
+| `_amount`      | `uint96`  | The amount to increase the balance by |
 
 **Returns**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`observation`|`ObservationLib.Observation`|The new/updated observation|
-|`isNew`|`bool`|Whether or not the observation is new or overwrote a previous one|
-|`isObservationRecorded`|`bool`|Whether or not an observation was recorded to storage|
-|`accountDetails`|`AccountDetails`||
-
+| Name                    | Type                         | Description                                                       |
+| ----------------------- | ---------------------------- | ----------------------------------------------------------------- |
+| `observation`           | `ObservationLib.Observation` | The new/updated observation                                       |
+| `isNew`                 | `bool`                       | Whether or not the observation is new or overwrote a previous one |
+| `isObservationRecorded` | `bool`                       | Whether or not an observation was recorded to storage             |
+| `accountDetails`        | `AccountDetails`             |                                                                   |
 
 ### decreaseBalances
 
 Decrease a user's balance and delegate balance by a given amount.
 
-*This function mutates the provided account.*
-
+_This function mutates the provided account._
 
 ```solidity
 function decreaseBalances(
@@ -83,30 +66,29 @@ function decreaseBalances(
         AccountDetails memory accountDetails
     );
 ```
+
 **Parameters**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`periodLength`|`uint32`|The length of an overwrite period|
-|`periodOffset`|`uint32`|The offset of the first period|
-|`_account`|`Account`|The account to update|
-|`_amount`|`uint96`|The amount to decrease the balance by|
-|`_revertMessage`|`string`|The revert message to use if the balance is insufficient|
+| Name             | Type      | Description                                              |
+| ---------------- | --------- | -------------------------------------------------------- |
+| `periodLength`   | `uint32`  | The length of an overwrite period                        |
+| `periodOffset`   | `uint32`  | The offset of the first period                           |
+| `_account`       | `Account` | The account to update                                    |
+| `_amount`        | `uint96`  | The amount to decrease the balance by                    |
+| `_revertMessage` | `string`  | The revert message to use if the balance is insufficient |
 
 **Returns**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`observation`|`ObservationLib.Observation`|The new/updated observation|
-|`isNew`|`bool`|Whether or not the observation is new or overwrote a previous one|
-|`isObservationRecorded`|`bool`|Whether or not the observation was recorded to storage|
-|`accountDetails`|`AccountDetails`||
-
+| Name                    | Type                         | Description                                                       |
+| ----------------------- | ---------------------------- | ----------------------------------------------------------------- |
+| `observation`           | `ObservationLib.Observation` | The new/updated observation                                       |
+| `isNew`                 | `bool`                       | Whether or not the observation is new or overwrote a previous one |
+| `isObservationRecorded` | `bool`                       | Whether or not the observation was recorded to storage            |
+| `accountDetails`        | `AccountDetails`             |                                                                   |
 
 ### getOldestObservation
 
 Looks up the oldest observation in the circular buffer.
-
 
 ```solidity
 function getOldestObservation(
@@ -114,25 +96,24 @@ function getOldestObservation(
     AccountDetails memory _accountDetails
 ) internal view returns (uint16 index, ObservationLib.Observation memory observation);
 ```
+
 **Parameters**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`_observations`|`ObservationLib.Observation[MAX_CARDINALITY]`|The circular buffer of observations|
-|`_accountDetails`|`AccountDetails`|The account details to query with|
+| Name              | Type                                          | Description                         |
+| ----------------- | --------------------------------------------- | ----------------------------------- |
+| `_observations`   | `ObservationLib.Observation[MAX_CARDINALITY]` | The circular buffer of observations |
+| `_accountDetails` | `AccountDetails`                              | The account details to query with   |
 
 **Returns**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`index`|`uint16`|The index of the oldest observation|
-|`observation`|`ObservationLib.Observation`|The oldest observation in the circular buffer|
-
+| Name          | Type                         | Description                                   |
+| ------------- | ---------------------------- | --------------------------------------------- |
+| `index`       | `uint16`                     | The index of the oldest observation           |
+| `observation` | `ObservationLib.Observation` | The oldest observation in the circular buffer |
 
 ### getNewestObservation
 
 Looks up the newest observation in the circular buffer.
-
 
 ```solidity
 function getNewestObservation(
@@ -140,27 +121,26 @@ function getNewestObservation(
     AccountDetails memory _accountDetails
 ) internal view returns (uint16 index, ObservationLib.Observation memory observation);
 ```
+
 **Parameters**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`_observations`|`ObservationLib.Observation[MAX_CARDINALITY]`|The circular buffer of observations|
-|`_accountDetails`|`AccountDetails`|The account details to query with|
+| Name              | Type                                          | Description                         |
+| ----------------- | --------------------------------------------- | ----------------------------------- |
+| `_observations`   | `ObservationLib.Observation[MAX_CARDINALITY]` | The circular buffer of observations |
+| `_accountDetails` | `AccountDetails`                              | The account details to query with   |
 
 **Returns**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`index`|`uint16`|The index of the newest observation|
-|`observation`|`ObservationLib.Observation`|The newest observation in the circular buffer|
-
+| Name          | Type                         | Description                                   |
+| ------------- | ---------------------------- | --------------------------------------------- |
+| `index`       | `uint16`                     | The index of the newest observation           |
+| `observation` | `ObservationLib.Observation` | The newest observation in the circular buffer |
 
 ### getBalanceAt
 
 Looks up a users balance at a specific time in the past. The time must be before the current overwrite period.
 
-*Ensure timestamps are safe using requireFinalized*
-
+_Ensure timestamps are safe using requireFinalized_
 
 ```solidity
 function getBalanceAt(
@@ -171,28 +151,27 @@ function getBalanceAt(
     uint256 _targetTime
 ) internal view requireFinalized(periodLength, periodOffset, _targetTime) returns (uint256);
 ```
+
 **Parameters**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`periodLength`|`uint32`|The length of an overwrite period|
-|`periodOffset`|`uint32`|The offset of the first period|
-|`_observations`|`ObservationLib.Observation[MAX_CARDINALITY]`|The circular buffer of observations|
-|`_accountDetails`|`AccountDetails`|The account details to query with|
-|`_targetTime`|`uint256`|The time to look up the balance at|
+| Name              | Type                                          | Description                         |
+| ----------------- | --------------------------------------------- | ----------------------------------- |
+| `periodLength`    | `uint32`                                      | The length of an overwrite period   |
+| `periodOffset`    | `uint32`                                      | The offset of the first period      |
+| `_observations`   | `ObservationLib.Observation[MAX_CARDINALITY]` | The circular buffer of observations |
+| `_accountDetails` | `AccountDetails`                              | The account details to query with   |
+| `_targetTime`     | `uint256`                                     | The time to look up the balance at  |
 
 **Returns**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`<none>`|`uint256`|balance The balance at the target time|
-
+| Name     | Type      | Description                            |
+| -------- | --------- | -------------------------------------- |
+| `<none>` | `uint256` | balance The balance at the target time |
 
 ### isShutdownAt
 
 Returns whether the TwabController has been shutdown at the given timestamp
 If the twab is queried at or after this time, whether an absolute timestamp or time range, it will return 0.
-
 
 ```solidity
 function isShutdownAt(uint256 timestamp, uint32 periodLength, uint32 periodOffset)
@@ -200,25 +179,24 @@ function isShutdownAt(uint256 timestamp, uint32 periodLength, uint32 periodOffse
     pure
     returns (bool);
 ```
+
 **Parameters**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`timestamp`|`uint256`|The timestamp to check|
-|`periodLength`|`uint32`||
-|`periodOffset`|`uint32`|The offset of the first period|
+| Name           | Type      | Description                    |
+| -------------- | --------- | ------------------------------ |
+| `timestamp`    | `uint256` | The timestamp to check         |
+| `periodLength` | `uint32`  |                                |
+| `periodOffset` | `uint32`  | The offset of the first period |
 
 **Returns**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`<none>`|`bool`|True if the TwabController is shutdown at the given timestamp, false otherwise.|
-
+| Name     | Type   | Description                                                                     |
+| -------- | ------ | ------------------------------------------------------------------------------- |
+| `<none>` | `bool` | True if the TwabController is shutdown at the given timestamp, false otherwise. |
 
 ### lastObservationAt
 
 Computes the largest timestamp at which the TwabController can record a new observation.
-
 
 ```solidity
 function lastObservationAt(uint32 periodLength, uint32 periodOffset)
@@ -226,26 +204,25 @@ function lastObservationAt(uint32 periodLength, uint32 periodOffset)
     pure
     returns (uint256);
 ```
+
 **Parameters**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`periodLength`|`uint32`||
-|`periodOffset`|`uint32`|The offset of the first period|
+| Name           | Type     | Description                    |
+| -------------- | -------- | ------------------------------ |
+| `periodLength` | `uint32` |                                |
+| `periodOffset` | `uint32` | The offset of the first period |
 
 **Returns**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`<none>`|`uint256`|The largest timestamp at which the TwabController can record a new observation.|
-
+| Name     | Type      | Description                                                                     |
+| -------- | --------- | ------------------------------------------------------------------------------- |
+| `<none>` | `uint256` | The largest timestamp at which the TwabController can record a new observation. |
 
 ### getTwabBetween
 
 Looks up a users TWAB for a time range. The time must be before the current overwrite period.
 
-*If the timestamps in the range are not exact matches of observations, the balance is extrapolated using the previous observation.*
-
+_If the timestamps in the range are not exact matches of observations, the balance is extrapolated using the previous observation._
 
 ```solidity
 function getTwabBetween(
@@ -257,28 +234,27 @@ function getTwabBetween(
     uint256 _endTime
 ) internal view requireFinalized(periodLength, periodOffset, _endTime) returns (uint256);
 ```
+
 **Parameters**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`periodLength`|`uint32`|The length of an overwrite period|
-|`periodOffset`|`uint32`|The offset of the first period|
-|`_observations`|`ObservationLib.Observation[MAX_CARDINALITY]`|The circular buffer of observations|
-|`_accountDetails`|`AccountDetails`|The account details to query with|
-|`_startTime`|`uint256`|The start of the time range|
-|`_endTime`|`uint256`|The end of the time range|
+| Name              | Type                                          | Description                         |
+| ----------------- | --------------------------------------------- | ----------------------------------- |
+| `periodLength`    | `uint32`                                      | The length of an overwrite period   |
+| `periodOffset`    | `uint32`                                      | The offset of the first period      |
+| `_observations`   | `ObservationLib.Observation[MAX_CARDINALITY]` | The circular buffer of observations |
+| `_accountDetails` | `AccountDetails`                              | The account details to query with   |
+| `_startTime`      | `uint256`                                     | The start of the time range         |
+| `_endTime`        | `uint256`                                     | The end of the time range           |
 
 **Returns**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`<none>`|`uint256`|twab The TWAB for the time range|
+| Name     | Type      | Description                      |
+| -------- | --------- | -------------------------------- |
+| `<none>` | `uint256` | twab The TWAB for the time range |
 
-
-### _recordObservation
+### \_recordObservation
 
 Given an AccountDetails with updated balances, either updates the latest Observation or records a new one
-
 
 ```solidity
 function _recordObservation(
@@ -294,30 +270,29 @@ function _recordObservation(
         AccountDetails memory newAccountDetails
     );
 ```
+
 **Parameters**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`periodLength`|`uint32`|The overwrite period length|
-|`periodOffset`|`uint32`|The overwrite period offset|
-|`_accountDetails`|`AccountDetails`|The updated account details|
-|`_account`|`Account`|The account to update|
+| Name              | Type             | Description                 |
+| ----------------- | ---------------- | --------------------------- |
+| `periodLength`    | `uint32`         | The overwrite period length |
+| `periodOffset`    | `uint32`         | The overwrite period offset |
+| `_accountDetails` | `AccountDetails` | The updated account details |
+| `_account`        | `Account`        | The account to update       |
 
 **Returns**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`observation`|`ObservationLib.Observation`|The new/updated observation|
-|`isNew`|`bool`|Whether or not the observation is new or overwrote a previous one|
-|`newAccountDetails`|`AccountDetails`|The new account details|
+| Name                | Type                         | Description                                                       |
+| ------------------- | ---------------------------- | ----------------------------------------------------------------- |
+| `observation`       | `ObservationLib.Observation` | The new/updated observation                                       |
+| `isNew`             | `bool`                       | Whether or not the observation is new or overwrote a previous one |
+| `newAccountDetails` | `AccountDetails`             | The new account details                                           |
 
-
-### _calculateTemporaryObservation
+### \_calculateTemporaryObservation
 
 Calculates a temporary observation for a given time using the previous observation.
 
-*This is used to extrapolate a balance for any given time.*
-
+_This is used to extrapolate a balance for any given time._
 
 ```solidity
 function _calculateTemporaryObservation(
@@ -325,22 +300,21 @@ function _calculateTemporaryObservation(
     PeriodOffsetRelativeTimestamp _time
 ) private pure returns (ObservationLib.Observation memory);
 ```
+
 **Parameters**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`_observation`|`ObservationLib.Observation`|The previous observation|
-|`_time`|`PeriodOffsetRelativeTimestamp`|The time to extrapolate to|
+| Name           | Type                            | Description                |
+| -------------- | ------------------------------- | -------------------------- |
+| `_observation` | `ObservationLib.Observation`    | The previous observation   |
+| `_time`        | `PeriodOffsetRelativeTimestamp` | The time to extrapolate to |
 
-
-### _getNextObservationIndex
+### \_getNextObservationIndex
 
 Looks up the next observation index to write to in the circular buffer.
 
-*If the current time is in the same period as the newest observation, we overwrite it.*
+_If the current time is in the same period as the newest observation, we overwrite it._
 
-*If the current time is in a new period, we increment the index and write a new observation.*
-
+_If the current time is in a new period, we increment the index and write a new observation._
 
 ```solidity
 function _getNextObservationIndex(
@@ -353,28 +327,27 @@ function _getNextObservationIndex(
     view
     returns (uint16 index, ObservationLib.Observation memory newestObservation, bool isNew);
 ```
+
 **Parameters**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`periodLength`|`uint32`|The length of an overwrite period|
-|`periodOffset`|`uint32`|The offset of the first period|
-|`_observations`|`ObservationLib.Observation[MAX_CARDINALITY]`|The circular buffer of observations|
-|`_accountDetails`|`AccountDetails`|The account details to query with|
+| Name              | Type                                          | Description                         |
+| ----------------- | --------------------------------------------- | ----------------------------------- |
+| `periodLength`    | `uint32`                                      | The length of an overwrite period   |
+| `periodOffset`    | `uint32`                                      | The offset of the first period      |
+| `_observations`   | `ObservationLib.Observation[MAX_CARDINALITY]` | The circular buffer of observations |
+| `_accountDetails` | `AccountDetails`                              | The account details to query with   |
 
 **Returns**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`index`|`uint16`|The index of the next observation slot to overwrite|
-|`newestObservation`|`ObservationLib.Observation`|The newest observation in the circular buffer|
-|`isNew`|`bool`|True if the observation slot is new, false if we're overwriting|
+| Name                | Type                         | Description                                                     |
+| ------------------- | ---------------------------- | --------------------------------------------------------------- |
+| `index`             | `uint16`                     | The index of the next observation slot to overwrite             |
+| `newestObservation` | `ObservationLib.Observation` | The newest observation in the circular buffer                   |
+| `isNew`             | `bool`                       | True if the observation slot is new, false if we're overwriting |
 
-
-### _currentOverwritePeriodStartedAt
+### \_currentOverwritePeriodStartedAt
 
 Computes the start time of the current overwrite period
-
 
 ```solidity
 function _currentOverwritePeriodStartedAt(uint32 periodLength, uint32 periodOffset)
@@ -382,24 +355,23 @@ function _currentOverwritePeriodStartedAt(uint32 periodLength, uint32 periodOffs
     view
     returns (uint256);
 ```
+
 **Parameters**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`periodLength`|`uint32`|The length of an overwrite period|
-|`periodOffset`|`uint32`|The offset of the first period|
+| Name           | Type     | Description                       |
+| -------------- | -------- | --------------------------------- |
+| `periodLength` | `uint32` | The length of an overwrite period |
+| `periodOffset` | `uint32` | The offset of the first period    |
 
 **Returns**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`<none>`|`uint256`|The start time of the current overwrite period|
+| Name     | Type      | Description                                    |
+| -------- | --------- | ---------------------------------------------- |
+| `<none>` | `uint256` | The start time of the current overwrite period |
 
-
-### _extrapolateFromBalance
+### \_extrapolateFromBalance
 
 Calculates the next cumulative balance using a provided Observation and timestamp.
-
 
 ```solidity
 function _extrapolateFromBalance(
@@ -407,24 +379,23 @@ function _extrapolateFromBalance(
     PeriodOffsetRelativeTimestamp _offsetTimestamp
 ) private pure returns (uint128);
 ```
+
 **Parameters**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`_observation`|`ObservationLib.Observation`|The observation to extrapolate from|
-|`_offsetTimestamp`|`PeriodOffsetRelativeTimestamp`|The timestamp to extrapolate to|
+| Name               | Type                            | Description                         |
+| ------------------ | ------------------------------- | ----------------------------------- |
+| `_observation`     | `ObservationLib.Observation`    | The observation to extrapolate from |
+| `_offsetTimestamp` | `PeriodOffsetRelativeTimestamp` | The timestamp to extrapolate to     |
 
 **Returns**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`<none>`|`uint128`|cumulativeBalance The cumulative balance at the timestamp|
-
+| Name     | Type      | Description                                               |
+| -------- | --------- | --------------------------------------------------------- |
+| `<none>` | `uint128` | cumulativeBalance The cumulative balance at the timestamp |
 
 ### currentOverwritePeriodStartedAt
 
 Computes the overwrite period start time given the current time
-
 
 ```solidity
 function currentOverwritePeriodStartedAt(uint32 periodLength, uint32 periodOffset)
@@ -432,26 +403,25 @@ function currentOverwritePeriodStartedAt(uint32 periodLength, uint32 periodOffse
     view
     returns (uint256);
 ```
+
 **Parameters**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`periodLength`|`uint32`|The length of an overwrite period|
-|`periodOffset`|`uint32`|The offset of the first period|
+| Name           | Type     | Description                       |
+| -------------- | -------- | --------------------------------- |
+| `periodLength` | `uint32` | The length of an overwrite period |
+| `periodOffset` | `uint32` | The offset of the first period    |
 
 **Returns**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`<none>`|`uint256`|The start time for the current overwrite period.|
-
+| Name     | Type      | Description                                      |
+| -------- | --------- | ------------------------------------------------ |
+| `<none>` | `uint256` | The start time for the current overwrite period. |
 
 ### getTimestampPeriod
 
 Calculates the period a timestamp falls within.
 
-*Timestamp prior to the periodOffset are considered to be in period 0.*
-
+_Timestamp prior to the periodOffset are considered to be in period 0._
 
 ```solidity
 function getTimestampPeriod(uint32 periodLength, uint32 periodOffset, uint256 _timestamp)
@@ -459,25 +429,24 @@ function getTimestampPeriod(uint32 periodLength, uint32 periodOffset, uint256 _t
     pure
     returns (uint256);
 ```
+
 **Parameters**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`periodLength`|`uint32`|The length of an overwrite period|
-|`periodOffset`|`uint32`|The offset of the first period|
-|`_timestamp`|`uint256`|The timestamp to calculate the period for|
+| Name           | Type      | Description                               |
+| -------------- | --------- | ----------------------------------------- |
+| `periodLength` | `uint32`  | The length of an overwrite period         |
+| `periodOffset` | `uint32`  | The offset of the first period            |
+| `_timestamp`   | `uint256` | The timestamp to calculate the period for |
 
 **Returns**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`<none>`|`uint256`|period The period|
-
+| Name     | Type      | Description       |
+| -------- | --------- | ----------------- |
+| `<none>` | `uint256` | period The period |
 
 ### getPeriodStartTime
 
 Calculates the start timestamp for a period
-
 
 ```solidity
 function getPeriodStartTime(uint32 periodLength, uint32 periodOffset, uint256 _period)
@@ -485,25 +454,24 @@ function getPeriodStartTime(uint32 periodLength, uint32 periodOffset, uint256 _p
     pure
     returns (uint256);
 ```
+
 **Parameters**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`periodLength`|`uint32`|The period length to use to calculate the period|
-|`periodOffset`|`uint32`|The period offset to use to calculate the period|
-|`_period`|`uint256`|The period to check|
+| Name           | Type      | Description                                      |
+| -------------- | --------- | ------------------------------------------------ |
+| `periodLength` | `uint32`  | The period length to use to calculate the period |
+| `periodOffset` | `uint32`  | The period offset to use to calculate the period |
+| `_period`      | `uint256` | The period to check                              |
 
 **Returns**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`<none>`|`uint256`|_timestamp The timestamp at which the period starts|
-
+| Name     | Type      | Description                                          |
+| -------- | --------- | ---------------------------------------------------- |
+| `<none>` | `uint256` | \_timestamp The timestamp at which the period starts |
 
 ### getPeriodEndTime
 
 Calculates the last timestamp for a period
-
 
 ```solidity
 function getPeriodEndTime(uint32 periodLength, uint32 periodOffset, uint256 _period)
@@ -511,58 +479,26 @@ function getPeriodEndTime(uint32 periodLength, uint32 periodOffset, uint256 _per
     pure
     returns (uint256);
 ```
+
 **Parameters**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`periodLength`|`uint32`|The period length to use to calculate the period|
-|`periodOffset`|`uint32`|The period offset to use to calculate the period|
-|`_period`|`uint256`|The period to check|
+| Name           | Type      | Description                                      |
+| -------------- | --------- | ------------------------------------------------ |
+| `periodLength` | `uint32`  | The period length to use to calculate the period |
+| `periodOffset` | `uint32`  | The period offset to use to calculate the period |
+| `_period`      | `uint256` | The period to check                              |
 
 **Returns**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`<none>`|`uint256`|_timestamp The timestamp at which the period ends|
+| Name     | Type      | Description                                        |
+| -------- | --------- | -------------------------------------------------- |
+| `<none>` | `uint256` | \_timestamp The timestamp at which the period ends |
 
-
-### getPreviousOrAtObservation
-
-Looks up the newest observation before or at a given timestamp.
-
-*If an observation is available at the target time, it is returned. Otherwise, the newest observation before the target time is returned.*
-
-
-```solidity
-function getPreviousOrAtObservation(
-    uint32 periodOffset,
-    ObservationLib.Observation[MAX_CARDINALITY] storage _observations,
-    AccountDetails memory _accountDetails,
-    uint256 _targetTime
-) internal view returns (ObservationLib.Observation memory prevOrAtObservation);
-```
-**Parameters**
-
-|Name|Type|Description|
-|----|----|-----------|
-|`periodOffset`|`uint32`|The period offset to use to calculate the period|
-|`_observations`|`ObservationLib.Observation[MAX_CARDINALITY]`|The circular buffer of observations|
-|`_accountDetails`|`AccountDetails`|The account details to query with|
-|`_targetTime`|`uint256`|The timestamp to look up|
-
-**Returns**
-
-|Name|Type|Description|
-|----|----|-----------|
-|`prevOrAtObservation`|`ObservationLib.Observation`|The observation|
-
-
-### _getPreviousOrAtObservation
+### \_getPreviousOrAtObservation
 
 Looks up the newest observation before or at a given timestamp.
 
-*If an observation is available at the target time, it is returned. Otherwise, the newest observation before the target time is returned.*
-
+_If an observation is available at the target time, it is returned. Otherwise, the newest observation before the target time is returned._
 
 ```solidity
 function _getPreviousOrAtObservation(
@@ -571,27 +507,26 @@ function _getPreviousOrAtObservation(
     PeriodOffsetRelativeTimestamp _offsetTargetTime
 ) private view returns (ObservationLib.Observation memory prevOrAtObservation);
 ```
+
 **Parameters**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`_observations`|`ObservationLib.Observation[MAX_CARDINALITY]`|The circular buffer of observations|
-|`_accountDetails`|`AccountDetails`|The account details to query with|
-|`_offsetTargetTime`|`PeriodOffsetRelativeTimestamp`|The timestamp to look up (offset by the period offset)|
+| Name                | Type                                          | Description                                            |
+| ------------------- | --------------------------------------------- | ------------------------------------------------------ |
+| `_observations`     | `ObservationLib.Observation[MAX_CARDINALITY]` | The circular buffer of observations                    |
+| `_accountDetails`   | `AccountDetails`                              | The account details to query with                      |
+| `_offsetTargetTime` | `PeriodOffsetRelativeTimestamp`               | The timestamp to look up (offset by the period offset) |
 
 **Returns**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`prevOrAtObservation`|`ObservationLib.Observation`|The observation|
-
+| Name                  | Type                         | Description     |
+| --------------------- | ---------------------------- | --------------- |
+| `prevOrAtObservation` | `ObservationLib.Observation` | The observation |
 
 ### hasFinalized
 
 Checks if the given timestamp is safe to perform a historic balance lookup on.
 
-*A timestamp is safe if it is before the current overwrite period*
-
+_A timestamp is safe if it is before the current overwrite period_
 
 ```solidity
 function hasFinalized(uint32 periodLength, uint32 periodOffset, uint256 _time)
@@ -599,27 +534,26 @@ function hasFinalized(uint32 periodLength, uint32 periodOffset, uint256 _time)
     view
     returns (bool);
 ```
+
 **Parameters**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`periodLength`|`uint32`|The period length to use to calculate the period|
-|`periodOffset`|`uint32`|The period offset to use to calculate the period|
-|`_time`|`uint256`|The timestamp to check|
+| Name           | Type      | Description                                      |
+| -------------- | --------- | ------------------------------------------------ |
+| `periodLength` | `uint32`  | The period length to use to calculate the period |
+| `periodOffset` | `uint32`  | The period offset to use to calculate the period |
+| `_time`        | `uint256` | The timestamp to check                           |
 
 **Returns**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`<none>`|`bool`|isSafe Whether or not the timestamp is safe|
+| Name     | Type   | Description                                 |
+| -------- | ------ | ------------------------------------------- |
+| `<none>` | `bool` | isSafe Whether or not the timestamp is safe |
 
-
-### _hasFinalized
+### \_hasFinalized
 
 Checks if the given timestamp is safe to perform a historic balance lookup on.
 
-*A timestamp is safe if it is on or before the current overwrite period start time*
-
+_A timestamp is safe if it is on or before the current overwrite period start time_
 
 ```solidity
 function _hasFinalized(uint32 periodLength, uint32 periodOffset, uint256 _time)
@@ -627,42 +561,42 @@ function _hasFinalized(uint32 periodLength, uint32 periodOffset, uint256 _time)
     view
     returns (bool);
 ```
+
 **Parameters**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`periodLength`|`uint32`|The period length to use to calculate the period|
-|`periodOffset`|`uint32`|The period offset to use to calculate the period|
-|`_time`|`uint256`|The timestamp to check|
+| Name           | Type      | Description                                      |
+| -------------- | --------- | ------------------------------------------------ |
+| `periodLength` | `uint32`  | The period length to use to calculate the period |
+| `periodOffset` | `uint32`  | The period offset to use to calculate the period |
+| `_time`        | `uint256` | The timestamp to check                           |
 
 **Returns**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`<none>`|`bool`|isSafe Whether or not the timestamp is safe|
-
+| Name     | Type   | Description                                 |
+| -------- | ------ | ------------------------------------------- |
+| `<none>` | `bool` | isSafe Whether or not the timestamp is safe |
 
 ### requireFinalized
 
 Checks if the given timestamp is safe to perform a historic balance lookup on.
 
-
 ```solidity
 modifier requireFinalized(uint32 periodLength, uint32 periodOffset, uint256 _timestamp);
 ```
+
 **Parameters**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`periodLength`|`uint32`|The period length to use to calculate the period|
-|`periodOffset`|`uint32`|The period offset to use to calculate the period|
-|`_timestamp`|`uint256`|The timestamp to check|
-
+| Name           | Type      | Description                                      |
+| -------------- | --------- | ------------------------------------------------ |
+| `periodLength` | `uint32`  | The period length to use to calculate the period |
+| `periodOffset` | `uint32`  | The period offset to use to calculate the period |
+| `_timestamp`   | `uint256` | The timestamp to check                           |
 
 ## Structs
-### AccountDetails
-Struct ring buffer parameters for single user Account.
 
+### AccountDetails
+
+Struct ring buffer parameters for single user Account.
 
 ```solidity
 struct AccountDetails {
@@ -674,17 +608,17 @@ struct AccountDetails {
 
 **Properties**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`balance`|`uint96`|Current token balance for an Account|
-|`nextObservationIndex`|`uint16`|Next uninitialized or updatable ring buffer checkpoint storage slot|
-|`cardinality`|`uint16`|Current total "initialized" ring buffer checkpoints for single user Account. Used to set initial boundary conditions for an efficient binary search.|
+| Name                   | Type     | Description                                                                                                                                          |
+| ---------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `balance`              | `uint96` | Current token balance for an Account                                                                                                                 |
+| `nextObservationIndex` | `uint16` | Next uninitialized or updatable ring buffer checkpoint storage slot                                                                                  |
+| `cardinality`          | `uint16` | Current total "initialized" ring buffer checkpoints for single user Account. Used to set initial boundary conditions for an efficient binary search. |
 
 ### Account
+
 Account details and historical twabs.
 
-*The size of observations is MAX_CARDINALITY from the ObservationLib.*
-
+_The size of observations is MAX_CARDINALITY from the ObservationLib._
 
 ```solidity
 struct Account {
@@ -695,8 +629,7 @@ struct Account {
 
 **Properties**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`details`|`AccountDetails`|The account details|
-|`observations`|`ObservationLib.Observation[17520]`|The history of observations for this account|
-
+| Name           | Type                                | Description                                  |
+| -------------- | ----------------------------------- | -------------------------------------------- |
+| `details`      | `AccountDetails`                    | The account details                          |
+| `observations` | `ObservationLib.Observation[17520]` | The history of observations for this account |

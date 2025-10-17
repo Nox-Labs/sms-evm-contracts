@@ -7,14 +7,14 @@ import {console} from "forge-std/console.sol";
 import {FileHelpers} from "../test/_utils/FileHelpers.sol";
 import {Fork} from "../test/_utils/Fork.sol";
 
-import {RusdDeployer} from "./lib/RusdDeployer.sol";
+import {SMSDeployer} from "./lib/SMSDeployer.sol";
 
-import {RUSDDataHub, RUSDDataHubMainChain} from "../src/RUSDDataHub.sol";
-import {RUSD} from "../src/RUSD.sol";
-import {YUSD} from "../src/YUSD.sol";
+import {SMSDataHub, SMSDataHubMainChain} from "../src/SMSDataHub.sol";
+import {SMS} from "../src/SMS.sol";
+import {MMS} from "../src/MMS.sol";
 
 contract Upgrade is Script, FileHelpers, Fork {
-    using RusdDeployer for address;
+    using SMSDeployer for address;
 
     uint256 pk;
 
@@ -25,54 +25,54 @@ contract Upgrade is Script, FileHelpers, Fork {
     function run(uint32 chainId) public {
         fork(chainId);
 
-        // _upgradeRUSD();
-        _upgradeYUSD();
-        // _upgradeRUSDDataHub();
-        // _upgradeRUSDDataHubMainChain();
+        // _upgradeSMS();
+        _upgradeMMS();
+        // _upgradeSMSDataHub();
+        // _upgradeSMSDataHubMainChain();
     }
 
-    function _upgradeRUSDDataHub() internal {
-        address rusdDataHub = readContractAddress(block.chainid, "RUSDDataHub");
+    function _upgradeSMSDataHub() internal {
+        address smsDataHub = readContractAddress(block.chainid, "SMSDataHub");
 
-        try RUSDDataHubMainChain(rusdDataHub).getYUSD() returns (address) {
-            revert("This upgrade should be done with RUSDDataHubMainChain");
+        try SMSDataHubMainChain(smsDataHub).getMMS() returns (address) {
+            revert("This upgrade should be done with SMSDataHubMainChain");
         } catch {}
 
         vm.startBroadcast(pk);
-        address newImplementation = address(new RUSDDataHub());
-        RUSDDataHub(rusdDataHub).upgradeToAndCall(newImplementation, "");
+        address newImplementation = address(new SMSDataHub());
+        SMSDataHub(smsDataHub).upgradeToAndCall(newImplementation, "");
         vm.stopBroadcast();
     }
 
-    function _upgradeRUSDDataHubMainChain() internal {
-        address rusdDataHub = readContractAddress(block.chainid, "RUSDDataHub");
+    function _upgradeSMSDataHubMainChain() internal {
+        address smsDataHub = readContractAddress(block.chainid, "SMSDataHub");
 
-        try RUSDDataHubMainChain(rusdDataHub).getYUSD() returns (address) {}
+        try SMSDataHubMainChain(smsDataHub).getMMS() returns (address) {}
         catch {
-            revert("This upgrade should be done with RUSDDataHub");
+            revert("This upgrade should be done with SMSDataHub");
         }
 
         vm.startBroadcast(pk);
-        address newImplementation = address(new RUSDDataHubMainChain());
-        RUSDDataHubMainChain(rusdDataHub).upgradeToAndCall(newImplementation, "");
+        address newImplementation = address(new SMSDataHubMainChain());
+        SMSDataHubMainChain(smsDataHub).upgradeToAndCall(newImplementation, "");
         vm.stopBroadcast();
     }
 
-    function _upgradeRUSD() internal {
-        address rusd = readContractAddress(block.chainid, "RUSD");
+    function _upgradeSMS() internal {
+        address sms = readContractAddress(block.chainid, "SMS");
 
         vm.startBroadcast(pk);
-        address newImplementation = address(new RUSD());
-        RUSD(rusd).upgradeToAndCall(newImplementation, "");
+        address newImplementation = address(new SMS());
+        SMS(sms).upgradeToAndCall(newImplementation, "");
         vm.stopBroadcast();
     }
 
-    function _upgradeYUSD() internal {
-        address yusd = readContractAddress(block.chainid, "YUSD");
+    function _upgradeMMS() internal {
+        address mms = readContractAddress(block.chainid, "MMS");
 
         vm.startBroadcast(pk);
-        address newImplementation = address(new YUSD());
-        YUSD(yusd).upgradeToAndCall(newImplementation, "");
+        address newImplementation = address(new MMS());
+        MMS(mms).upgradeToAndCall(newImplementation, "");
         vm.stopBroadcast();
     }
 }
