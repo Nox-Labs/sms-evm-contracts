@@ -29,7 +29,7 @@ contract Redeem is MMSSetup {
     }
 
     function test_RevertIfZeroBytes() public {
-        vm.expectRevert(Base.ZeroBytes.selector);
+        vm.expectRevert(Base.EmptyBytes.selector);
         mms.redeem(address(this), MINT_AMOUNT, "");
     }
 

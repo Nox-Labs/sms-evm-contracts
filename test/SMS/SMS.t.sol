@@ -45,7 +45,9 @@ contract SMSTest is SMSSetup {
 
     function test_transfer_RevertIfFromIsBlacklisted() public {
         sms.blacklist(address(this));
-        vm.expectRevert(abi.encodeWithSelector(Blacklistable.Blacklist.selector, address(this)));
+        vm.expectRevert(
+            abi.encodeWithSelector(Blacklistable.BlacklistedAccount.selector, address(this))
+        );
         sms.transfer(user, 100);
     }
 
@@ -87,7 +89,7 @@ contract SMSTest is SMSSetup {
 
     function test_initialize_RevertIfAlreadyInitialized() public {
         vm.expectRevert(abi.encodeWithSelector(Initializable.InvalidInitialization.selector));
-        sms.initialize(address(this));
+        sms.initialize(smsDataHub);
     }
 
     /* ======== decimals ======== */

@@ -63,7 +63,7 @@ contract Stake is MMSSetup {
     }
 
     function test_RevertIfZeroBytes() public {
-        vm.expectRevert(Base.ZeroBytes.selector);
+        vm.expectRevert(Base.EmptyBytes.selector);
         mms.stake(address(this), MINT_AMOUNT, "");
     }
 

@@ -110,7 +110,7 @@ contract Mint is SMSSetup {
     }
 
     function test_RevertIfZeroBytesWithData() public {
-        vm.expectRevert(Base.ZeroBytes.selector);
+        vm.expectRevert(Base.EmptyBytes.selector);
         sms.mint(address(this), MINT_AMOUNT, "");
     }
 

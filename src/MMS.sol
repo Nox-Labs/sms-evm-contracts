@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import {IMMS} from "./interface/IMMS.sol";
 import {ISMS} from "./interface/ISMS.sol";
-import {PauseLevel} from "./interface/ISMSDataHub.sol";
+import {ISMSDataHub, PauseLevel} from "./interface/ISMSDataHub.sol";
 
 import {TWAB} from "./extensions/TWAB.sol";
 import {SMSDataHubKeeper} from "./extensions/SMSDataHubKeeper.sol";
@@ -23,8 +23,7 @@ import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
  * @notice During the rounds, staker's balance is tracked by TWAB
  * and rewards are calculated based on the average balance of the staker in the round.
  * After the round is finalized, the SMS rewards are transferred to the MMS contract from the admin.
- * Also stakers can claim rewards during the round, but this creates a debt on the MMS contract,
- * so it's impossible to redeem all MMS and claim all rewards while admin didn't finalize the current round.
+ * Stakers can't claim rewards until the round is finalized.
  * @notice All actions are allowed only for minter except for admin functionalities.
  */
 contract MMS is IMMS, TWAB, SMSDataHubKeeper, UUPSUpgradeable {
@@ -49,6 +48,11 @@ contract MMS is IMMS, TWAB, SMSDataHubKeeper, UUPSUpgradeable {
     }
 
     /**
+     * @notice The maximum number of rounds to .
+     */
+    uint8 public constant MAX_ROUND_REWIND = 5;
+
+    /**
      * @notice The precision of the basis points.
      * @notice 1% = 100bp.
      * @notice BP stands for Basis Points.
@@ -59,13 +63,6 @@ contract MMS is IMMS, TWAB, SMSDataHubKeeper, UUPSUpgradeable {
      * @notice The precision of the internal math.
      */
     uint128 constant INTERNAL_MATH_PRECISION = 1e30;
-
-    /**
-     * @notice The total debt of the MMS contract in SMS to all users (not including the current round)
-     * @notice If totalDebt is positive, it means surplus of SMS on MMS contract. (All users can redeem and claim `totalDebt` as rewards) (If all users redeem and claim rewards, the debt will be zero)
-     * @notice If totalDebt is negative, it means shortfall of SMS on MMS contract. (All users can't redeem and claim whole rewards)
-     */
-    int256 public totalDebt;
 
     /**
      * @notice The timestamps of the rounds.
@@ -91,7 +88,7 @@ contract MMS is IMMS, TWAB, SMSDataHubKeeper, UUPSUpgradeable {
      * @param _roundDuration The duration of the first round. (How long the first round lasts?)
      */
     function initialize(
-        address _smsDataHub,
+        ISMSDataHub _smsDataHub,
         uint32 _periodLength,
         uint32 _firstRoundStartTimestamp,
         uint32 _roundBp,
@@ -144,14 +141,13 @@ contract MMS is IMMS, TWAB, SMSDataHubKeeper, UUPSUpgradeable {
         external
         updateRoundTimestamps
         onlyMinter
-        noPauseLevel(PauseLevel.High)
+        noPauseLevel(PauseLevel.Medium)
         noZeroAmount(amount)
         noZeroAddress(user)
-        noZeroBytes(data)
+        noEmptyBytes(data)
     {
         _getSMS().safeTransferFrom(msg.sender, address(this), amount);
-        _transfer(address(0), user, amount);
-
+        _mint(user, amount);
         emit Stake(user, amount, data);
     }
 
@@ -166,12 +162,12 @@ contract MMS is IMMS, TWAB, SMSDataHubKeeper, UUPSUpgradeable {
         external
         updateRoundTimestamps
         onlyMinter
-        noPauseLevel(PauseLevel.High)
+        noPauseLevel(PauseLevel.Medium)
         noZeroAmount(amount)
         noZeroAddress(user)
-        noZeroBytes(data)
+        noEmptyBytes(data)
     {
-        _transfer(user, address(0), amount);
+        _burn(user, amount);
         _getSMS().safeTransfer(msg.sender, amount);
 
         emit Redeem(user, amount, data);
@@ -185,18 +181,19 @@ contract MMS is IMMS, TWAB, SMSDataHubKeeper, UUPSUpgradeable {
      * @param amount The amount of rewards to claim.
      * @notice Emits RewardsClaimed event.
      */
-    function claimRewards(uint32 roundId, address user, address to, uint256 amount)
-        external
-        updateRoundTimestamps
-        onlyMinter
-        noZeroAmount(amount)
-    {
+    function claimRewards(
+        uint32 roundId,
+        address user,
+        address to,
+        uint256 amount,
+        bytes calldata data
+    ) external updateRoundTimestamps onlyMinter noZeroAmount(amount) {
         uint256 claimableRewards = calculateClaimableRewards(roundId, user);
         if (amount > claimableRewards) revert InsufficientRewards(amount, claimableRewards);
 
         _claimRewards(roundId, user, amount, to);
 
-        emit RewardsClaimed(roundId, user, to, amount);
+        emit RewardsClaimed(roundId, user, to, amount, data);
     }
 
     /**
@@ -206,7 +203,7 @@ contract MMS is IMMS, TWAB, SMSDataHubKeeper, UUPSUpgradeable {
      * @param to The address to transfer the rewards to.
      * @notice Emits RewardsClaimed event.
      */
-    function claimRewards(uint32 roundId, address user, address to)
+    function claimRewards(uint32 roundId, address user, address to, bytes calldata data)
         external
         updateRoundTimestamps
         onlyMinter
@@ -215,7 +212,7 @@ contract MMS is IMMS, TWAB, SMSDataHubKeeper, UUPSUpgradeable {
         smsAmount = calculateClaimableRewards(roundId, user);
         _claimRewards(roundId, user, smsAmount, to);
 
-        emit RewardsClaimed(roundId, user, to, smsAmount);
+        emit RewardsClaimed(roundId, user, to, smsAmount, data);
     }
 
     /**
@@ -225,16 +222,16 @@ contract MMS is IMMS, TWAB, SMSDataHubKeeper, UUPSUpgradeable {
      * @notice This function is used to claim rewards and stake them back.
      * @notice Emits RewardsCompounded event.
      */
-    function compoundRewards(uint32 roundId, address user)
+    function compoundRewards(uint32 roundId, address user, bytes calldata data)
         external
         updateRoundTimestamps
         onlyMinter
     {
         uint256 claimableRewards = calculateClaimableRewards(roundId, user);
         _claimRewards(roundId, user, claimableRewards, address(this));
-        _transfer(address(0), user, uint96(claimableRewards));
+        _mint(user, uint96(claimableRewards));
 
-        emit RewardsCompounded(roundId, user, claimableRewards);
+        emit RewardsCompounded(roundId, user, claimableRewards, data);
     }
 
     /* ======== VIEW ======== */
@@ -334,12 +331,12 @@ contract MMS is IMMS, TWAB, SMSDataHubKeeper, UUPSUpgradeable {
      */
     function _claimRewards(uint32 roundId, address user, uint256 amount, address to)
         private
-        noPauseLevel(PauseLevel.High)
+        noPauseLevel(PauseLevel.Medium)
         noZeroAddress(to)
         noZeroAmount(amount)
     {
+        if (!_roundInfo[roundId].isFinalized) revert RoundNotFinalized();
         _roundInfo[roundId].claimedRewards[user] += amount;
-        totalDebt -= int256(amount);
         _getSMS().safeTransfer(to, amount);
     }
 
@@ -428,13 +425,7 @@ contract MMS is IMMS, TWAB, SMSDataHubKeeper, UUPSUpgradeable {
      * @notice Emits RoundBpChanged event.
      */
     function changeNextRoundBp(uint32 bp) external onlyAdmin {
-        if (bp > BP_PRECISION) revert InvalidBp();
-
-        uint32 nextRoundId = getCurrentRoundId() + 1;
-        _roundInfo[nextRoundId].bp = bp;
-        _roundInfo[nextRoundId].isBpSet = true;
-
-        emit RoundBpChanged(nextRoundId, bp);
+        _updateBpForRound(getCurrentRoundId() + 1, bp);
     }
 
     /**
@@ -444,29 +435,45 @@ contract MMS is IMMS, TWAB, SMSDataHubKeeper, UUPSUpgradeable {
      * @dev This function will increase the total debt of the MMS contract.
      * @notice Emits RoundFinalized event.
      */
-    function finalizeRound(uint32 roundId) external onlyAdmin {
+    function finalizeRound(uint32 roundId) public onlyAdmin {
         RoundInfo storage round = _roundInfo[roundId];
 
         (, uint32 end) = getRoundPeriod(roundId);
-
-        if (round.isFinalized) revert RoundAlreadyFinalized();
-        round.isFinalized = true;
 
         if (block.timestamp < end) revert RoundNotEnded();
 
         if (!hasFinalized(end)) revert TwabNotFinalized();
 
+        if (round.isFinalized) revert RoundAlreadyFinalized();
+        round.isFinalized = true;
+
         uint256 totalRewards = calculateTotalRewardsRound(roundId);
-        totalDebt += int256(totalRewards);
         _getSMS().safeTransferFrom(msg.sender, address(this), totalRewards);
 
         emit RoundFinalized(roundId, totalRewards);
     }
 
     /**
+     * @notice Finalize the round and change the basis points of the round.
+     * @notice Emits RoundBpChanged event.
+     */
+    function finalizeRound(uint32 roundId, uint32 bpForRound) public onlyAdmin {
+        _updateBpForRound(roundId, bpForRound);
+        finalizeRound(roundId);
+    }
+
+    function _updateBpForRound(uint32 roundId, uint32 bp) private {
+        if (bp > BP_PRECISION) revert InvalidBp();
+        _roundInfo[roundId].bp = bp;
+        _roundInfo[roundId].isBpSet = true;
+        emit RoundBpChanged(roundId, bp);
+    }
+
+    /**
      * @notice Authorize the upgrade of the contract.
      * @param newImplementation The address of the new implementation.
      * @notice Emits Upgrade event.
+     * @dev This function is empty because we need only admin to authorize the upgrade.
      */
     function _authorizeUpgrade(address newImplementation) internal override onlyAdmin {}
 
@@ -475,14 +482,25 @@ contract MMS is IMMS, TWAB, SMSDataHubKeeper, UUPSUpgradeable {
     /**
      * @notice Update the round timestamps.
      * @notice This modifier is used to check if the current round is ended and start the next round.
+     * @notice If the timestamps run so far ahead that the current round after MAX_ROUND_REWIND doesn't reach the actual current round,
+     * the function will emit MaxRoundRewindReached event and stop the function immediately (doesn't reach the _;).
+     * This allow to call any functions that has this modifier several times to reach the actual current round,
+     * and only after that function will reach the _; and continue the execution.
      */
     modifier updateRoundTimestamps() {
         (, uint32 end) = getRoundPeriod(getCurrentRoundId());
+
+        uint8 rewindCount = 0;
 
         while (block.timestamp >= end) {
             _startNextRound();
 
             (, end) = getRoundPeriod(getCurrentRoundId());
+
+            if (++rewindCount == MAX_ROUND_REWIND) {
+                emit MaxRoundRewindReached();
+                return;
+            }
         }
 
         _;

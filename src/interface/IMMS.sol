@@ -7,12 +7,19 @@ interface IMMS is IERC20Metadata {
     function stake(address user, uint96 amount, bytes calldata data) external;
     function redeem(address user, uint96 amount, bytes calldata data) external;
 
-    function claimRewards(uint32 roundId, address user, address to, uint256 amount) external;
-    function claimRewards(uint32 roundId, address user, address to)
+    function claimRewards(
+        uint32 roundId,
+        address user,
+        address to,
+        uint256 amount,
+        bytes calldata data
+    ) external;
+    function claimRewards(uint32 roundId, address user, address to, bytes calldata data)
         external
         returns (uint256 amount);
-    function compoundRewards(uint32 roundId, address user) external;
+    function compoundRewards(uint32 roundId, address user, bytes calldata data) external;
     function finalizeRound(uint32 roundId) external;
+    function finalizeRound(uint32 roundId, uint32 bpForRound) external;
     function changeNextRoundDuration(uint32 duration) external;
     function changeNextRoundBp(uint32 bp) external;
 
@@ -26,19 +33,21 @@ interface IMMS is IERC20Metadata {
         returns (uint256);
 
     event NewRound(uint32 roundId, uint32 start, uint32 end);
-    event RewardsClaimed(uint32 roundId, address user, address to, uint256 amount);
-    event RewardsCompounded(uint32 roundId, address user, uint256 amount);
+    event RewardsClaimed(uint32 roundId, address user, address to, uint256 amount, bytes data);
+    event RewardsCompounded(uint32 roundId, address user, uint256 amount, bytes data);
     event RoundFinalized(uint32 roundId, uint256 amount);
     event RoundDurationChanged(uint32 roundId, uint32 duration);
     event RoundBpChanged(uint32 roundId, uint32 bp);
+    event MaxRoundRewindReached();
+    event Stake(address indexed user, uint256 amount, bytes data);
+    event Redeem(address indexed user, uint256 amount, bytes data);
+    event Transfer(address indexed from, address indexed to, uint256 amount, bytes data);
 
     error RoundIdUnavailable();
     error RoundNotEnded();
+    error RoundNotFinalized();
     error RoundAlreadyFinalized();
     error InsufficientRewards(uint256 amount, uint256 claimableRewards);
     error InvalidBp();
     error TwabNotFinalized();
-
-    event Stake(address indexed user, uint256 amount, bytes data);
-    event Redeem(address indexed user, uint256 amount, bytes data);
 }

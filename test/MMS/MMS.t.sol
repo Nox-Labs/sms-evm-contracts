@@ -31,7 +31,7 @@ contract MMSTest is MMSSetup {
 
     function test_initialize_RevertIfAlreadyInitialized() public {
         vm.expectRevert(abi.encodeWithSelector(Initializable.InvalidInitialization.selector));
-        mms.initialize(address(this), 1, 1, 1, 1);
+        mms.initialize(smsDataHub, 1, 1, 1, 1);
     }
 
     /* ======== getCurrentRoundId ======== */
@@ -94,38 +94,6 @@ contract MMSTest is MMSSetup {
 
         assertEq(bp1, roundId1NewBp);
         assertEq(duration1, roundId1NewDuration);
-    }
-
-    /* ======== totalDebt ======== */
-
-    function testFuzz_totalDebt_ShouldDecreaseWhenRewardsAreClaimed(uint256 period) public {
-        period = bound(period, twabPeriodLength, roundDuration);
-
-        mms.stake(address(this), MINT_AMOUNT, mockData);
-
-        int256 totalDebtBefore = mms.totalDebt();
-        assertEq(totalDebtBefore, 0);
-
-        skip(period);
-
-        uint256 claimedRewards = mms.claimRewards(currentRoundId, address(this), address(this));
-
-        int256 totalDebtAfter = mms.totalDebt();
-
-        assertLt(totalDebtAfter, totalDebtBefore);
-        assertEq(totalDebtAfter, -int256(claimedRewards));
-    }
-
-    function test_totalDebt_ShouldIncreaseAfterRoundIsFinalized() public {
-        mms.stake(address(this), MINT_AMOUNT, mockData);
-
-        skip(roundDuration);
-        mms.claimRewards(currentRoundId, address(this), address(this));
-
-        assertEq(mms.totalDebt(), -int256(mms.calculateTotalRewardsRound(currentRoundId)));
-
-        mms.finalizeRound(currentRoundId);
-        assertEq(mms.totalDebt(), 0);
     }
 
     /* ======== decimals ======== */

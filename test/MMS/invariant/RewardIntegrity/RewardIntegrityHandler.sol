@@ -94,7 +94,7 @@ contract RewardIntegrityHandler is Test {
 
         vm.startPrank(minter);
         sms.mint(address(mms), claimable, mockData);
-        mms.claimRewards(roundToClaim, staker, staker, claimable);
+        mms.claimRewards(roundToClaim, staker, staker, claimable, mockData);
 
         totalClaimedPerRound[roundToClaim] += claimable;
 

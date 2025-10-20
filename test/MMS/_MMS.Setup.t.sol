@@ -25,6 +25,13 @@ contract MMSSetup is BaseSetup {
         skip(twabPeriodLength);
     }
 
+    function _finalizeCurrentRound() internal {
+        uint32 _currentRoundId = mms.getCurrentRoundId();
+        uint256 totalRewards = mms.calculateTotalRewardsRound(_currentRoundId);
+        sms.mint(address(this), totalRewards, mockData);
+        mms.finalizeRound(_currentRoundId);
+    }
+
     modifier test_roundTimestampModifier() {
         (, uint32 end) = mms.getRoundPeriod(currentRoundId);
         vm.warp(end);

@@ -43,6 +43,7 @@ contract SMSOmnichainAdapter is
      * @param _lzEndpoint The address of the LayerZero endpoint.
      * @dev Set the endpoint address in the immutable endpoint variable.
      * @dev This will work properly with proxy contract because the immutable variable works like a constant.
+     * @dev This function is empty because we only need to call the parent constructor.
      */
     constructor(address _lzEndpoint) OAppUpgradeable(_lzEndpoint) {}
 
@@ -50,7 +51,7 @@ contract SMSOmnichainAdapter is
      * @notice Initializes the contract.
      * @param _smsDataHub The address of the SMSDataHub contract.
      */
-    function initialize(address _smsDataHub) public initializer {
+    function initialize(ISMSDataHub _smsDataHub) public initializer {
         __SMSDataHubKeeper_init(_smsDataHub);
         __OApp_init(ISMSDataHub(_smsDataHub).getAdmin());
     }

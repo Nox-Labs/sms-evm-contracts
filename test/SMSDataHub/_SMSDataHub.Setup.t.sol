@@ -9,7 +9,8 @@ contract SMSDataHubSetup is BaseSetup {
     address mockAddress = makeAddr("mockAddress");
 
     function _afterSetUp() internal override {
-        address _create3Factory = Create3Deployer._deploy_create3Factory("SMS.CREATE3Factory.2");
+        ICREATE3Factory _create3Factory =
+            Create3Deployer.deploy_create3Factory("SMS.CREATE3Factory.2");
         newSMSDataHub = SMSDataHubMainChain(
             SMSDeployer.deploy_SMSDataHubMainChain(_create3Factory, address(this), address(this))
         );

@@ -8,10 +8,16 @@ import {Fork} from "../test/_utils/Fork.sol";
 import {console} from "forge-std/console.sol";
 import {addressToBytes32} from "../test/_utils/LayerZeroDevtoolsHelper.sol";
 
-import "./lib/SMSDeployer.sol";
+import {SMSDeployer} from "./lib/SMSDeployer.sol";
+import {ICREATE3Factory} from "@layerzerolabs/create3-factory/contracts/ICREATE3Factory.sol";
+
+import {ISMSDataHub, ISMSDataHubMainChain} from "../src/SMSDataHub.sol";
+import {ISMS} from "../src/SMS.sol";
+import {IMMS} from "../src/MMS.sol";
+import {SMSOmnichainAdapter, ISMSOmnichainAdapter} from "../src/SMSOmnichainAdapter.sol";
 
 contract Deploy is Script, FileHelpers, Fork {
-    using SMSDeployer for address;
+    using SMSDeployer for ICREATE3Factory;
 
     mapping(uint256 chainId => address lzEndpoint) public lzEndpoints;
 
@@ -19,11 +25,12 @@ contract Deploy is Script, FileHelpers, Fork {
     address immutable MINTER;
 
     uint32 immutable PERIOD_LENGTH;
-    uint32 immutable FIRST_ROUND_START_TIMESTAMP;
-    uint32 immutable ROUND_BP;
     uint32 immutable ROUND_DURATION;
+    uint32 immutable ROUND_BP;
 
     uint32 immutable MAIN_CHAIN_ID;
+
+    uint32 FIRST_ROUND_START_TIMESTAMP;
 
     uint256 pk;
 
@@ -35,10 +42,9 @@ contract Deploy is Script, FileHelpers, Fork {
         DEFAULT_ADMIN = vm.addr(pk);
         MINTER = DEFAULT_ADMIN;
 
-        PERIOD_LENGTH = 1 hours;
-        FIRST_ROUND_START_TIMESTAMP = uint32(block.timestamp);
-        ROUND_DURATION = 1 days;
-        ROUND_BP = 200;
+        PERIOD_LENGTH = 1 days;
+        ROUND_DURATION = 5 days;
+        ROUND_BP = 1000;
 
         lzEndpoints[42161] = 0x1a44076050125825900e736c501f859c50fE728c;
         lzEndpoints[56] = 0x1a44076050125825900e736c501f859c50fE728c;
@@ -49,13 +55,18 @@ contract Deploy is Script, FileHelpers, Fork {
     function run(uint32 chainId) public {
         fork(chainId);
 
-        address create3Factory = readContractAddress(chainId, "Create3Factory");
+        FIRST_ROUND_START_TIMESTAMP = uint32(block.timestamp);
+
+        console.log("FIRST_ROUND_START_TIMESTAMP", FIRST_ROUND_START_TIMESTAMP);
+
+        ICREATE3Factory create3Factory =
+            ICREATE3Factory(readContractAddress(chainId, "Create3Factory"));
         address lzEndpoint = lzEndpoints[chainId];
 
-        address smsDataHub;
-        address sms;
-        address mms;
-        address omnichainAdapter;
+        ISMSDataHub smsDataHub;
+        ISMS sms;
+        IMMS mms;
+        ISMSOmnichainAdapter omnichainAdapter;
 
         vm.startBroadcast(pk);
 
@@ -67,16 +78,18 @@ contract Deploy is Script, FileHelpers, Fork {
                 _peripheralChainDeploy(create3Factory, DEFAULT_ADMIN, MINTER, lzEndpoint);
         }
 
-        SMSDataHub(smsDataHub).setSMS(address(sms));
-        SMSDataHub(smsDataHub).setOmnichainAdapter(address(omnichainAdapter));
-        if (chainId == MAIN_CHAIN_ID) SMSDataHubMainChain(smsDataHub).setMMS(address(mms));
+        smsDataHub.setSMS(address(sms));
+        smsDataHub.setOmnichainAdapter(address(omnichainAdapter));
+        if (chainId == MAIN_CHAIN_ID) {
+            ISMSDataHubMainChain(address(smsDataHub)).setMMS(address(mms));
+        }
 
         vm.stopBroadcast();
 
-        writeContractAddress(chainId, sms, "SMS");
-        writeContractAddress(chainId, smsDataHub, "SMSDataHub");
-        writeContractAddress(chainId, omnichainAdapter, "SMSOmnichainAdapter");
-        if (chainId == MAIN_CHAIN_ID) writeContractAddress(chainId, mms, "MMS");
+        writeContractAddress(chainId, address(sms), "SMS");
+        writeContractAddress(chainId, address(smsDataHub), "SMSDataHub");
+        writeContractAddress(chainId, address(omnichainAdapter), "SMSOmnichainAdapter");
+        if (chainId == MAIN_CHAIN_ID) writeContractAddress(chainId, address(mms), "MMS");
 
         _afterDeploy();
     }
@@ -98,25 +111,28 @@ contract Deploy is Script, FileHelpers, Fork {
     function _afterDeploy() internal virtual {}
 
     function _peripheralChainDeploy(
-        address create3Factory,
+        ICREATE3Factory create3Factory,
         address defaultAdmin,
         address minter,
         address lzEndpoint
-    ) internal returns (address smsDataHub, address sms, address omnichainAdapter) {
+    ) internal returns (ISMSDataHub smsDataHub, ISMS sms, ISMSOmnichainAdapter omnichainAdapter) {
         smsDataHub = create3Factory.deploy_SMSDataHubMainChain(defaultAdmin, minter);
         sms = create3Factory.deploy_SMS(smsDataHub);
         omnichainAdapter = create3Factory.deploy_SMSOmnichainAdapter(smsDataHub, lzEndpoint);
     }
 
     function _mainChainDeploy(
-        address create3Factory,
+        ICREATE3Factory create3Factory,
         address defaultAdmin,
         address minter,
         address lzEndpoint
-    ) internal returns (address smsDataHub, address sms, address mms, address omnichainAdapter) {
-        (smsDataHub, sms, omnichainAdapter) =
-            _peripheralChainDeploy(create3Factory, defaultAdmin, minter, lzEndpoint);
-
+    )
+        internal
+        returns (ISMSDataHub smsDataHub, ISMS sms, IMMS mms, ISMSOmnichainAdapter omnichainAdapter)
+    {
+        smsDataHub = create3Factory.deploy_SMSDataHubMainChain(defaultAdmin, minter);
+        sms = create3Factory.deploy_SMS(smsDataHub);
+        omnichainAdapter = create3Factory.deploy_SMSOmnichainAdapter(smsDataHub, lzEndpoint);
         mms = create3Factory.deploy_MMS(
             smsDataHub, PERIOD_LENGTH, FIRST_ROUND_START_TIMESTAMP, ROUND_BP, ROUND_DURATION
         );

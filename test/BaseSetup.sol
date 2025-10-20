@@ -18,24 +18,27 @@ import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Utils.sol";
 import "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
 import "@openzeppelin/contracts/interfaces/IERC20.sol";
 
+import "@layerzerolabs/create3-factory/contracts/ICREATE3Factory.sol";
+
 import "test/_utils/LayerZeroDevtoolsHelper.sol";
 
 contract BaseSetup is LayerZeroDevtoolsHelper {
-    using SMSDeployer for address;
+    using SMSDeployer for ICREATE3Factory;
+    using Create3Deployer for ICREATE3Factory;
 
     uint96 public constant MINT_AMOUNT = 1e6;
     uint32 public constant ROUND_BP = 1e4;
 
     bytes public constant mockData = "mock";
 
-    address public create3Factory;
+    ICREATE3Factory public create3Factory;
 
     SMS public sms;
     MMS public mms;
     SMSDataHubMainChain public smsDataHub;
     SMSOmnichainAdapter public adapter;
 
-    address public create3Factory2;
+    ICREATE3Factory public create3Factory2;
 
     SMS public sms2;
     SMSDataHub public smsDataHub2;
@@ -54,20 +57,18 @@ contract BaseSetup is LayerZeroDevtoolsHelper {
     }
 
     function _setUp() internal virtual {
-        create3Factory = Create3Deployer._deploy_create3Factory("SMS.CREATE3Factory");
-        create3Factory2 = Create3Deployer._deploy_create3Factory("SMS.CREATE3Factory2");
+        create3Factory = Create3Deployer.deploy_create3Factory("SMS.CREATE3Factory");
+        create3Factory2 = Create3Deployer.deploy_create3Factory("SMS.CREATE3Factory2");
 
-        smsDataHub = SMSDataHubMainChain(
-            create3Factory.deploy_SMSDataHubMainChain(address(this), address(this))
-        );
-        sms = SMS(create3Factory.deploy_SMS(address(smsDataHub)));
+        smsDataHub = create3Factory.deploy_SMSDataHubMainChain(address(this), address(this));
+        sms = SMS(create3Factory.deploy_SMS(smsDataHub));
         mms = MMS(
             create3Factory.deploy_MMS(
-                address(smsDataHub), twabPeriodLength, uint32(block.timestamp), ROUND_BP, 100 days
+                smsDataHub, twabPeriodLength, uint32(block.timestamp), ROUND_BP, 100 days
             )
         );
         adapter = SMSOmnichainAdapter(
-            create3Factory.deploy_SMSOmnichainAdapter(address(smsDataHub), address(endPointA))
+            create3Factory.deploy_SMSOmnichainAdapter(smsDataHub, address(endPointA))
         );
 
         smsDataHub.setSMS(address(sms));
@@ -75,9 +76,9 @@ contract BaseSetup is LayerZeroDevtoolsHelper {
         smsDataHub.setOmnichainAdapter(address(adapter));
 
         smsDataHub2 = SMSDataHub(create3Factory2.deploy_SMSDataHub(address(this), address(this)));
-        sms2 = SMS(create3Factory2.deploy_SMS(address(smsDataHub2)));
+        sms2 = SMS(create3Factory2.deploy_SMS(smsDataHub2));
         adapter2 = SMSOmnichainAdapter(
-            create3Factory2.deploy_SMSOmnichainAdapter(address(smsDataHub2), address(endPointB))
+            create3Factory2.deploy_SMSOmnichainAdapter(smsDataHub2, address(endPointB))
         );
 
         smsDataHub2.setSMS(address(sms2));

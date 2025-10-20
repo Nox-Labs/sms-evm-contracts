@@ -10,12 +10,12 @@ abstract contract Blacklistable is Initializable {
     }
 
     // keccak256(abi.encode(uint256(keccak256("sms.storage.blacklistable")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant BlacklistableStorageLocation =
-        0x37fdfedea7bc71b4b9d383608b0a4df30499c3d3977ac8ddd72e34648cf73000;
+    bytes32 private constant BLACKLISTABLE_STORAGE_LOCATION =
+        0x8a2131119662f7e94b7ab89e3d23f8f5cb94fee44e6233ad76f409857f71e400;
 
     function _getBlacklistableStorage() private pure returns (BlacklistableStorage storage $) {
         assembly {
-            $.slot := BlacklistableStorageLocation
+            $.slot := BLACKLISTABLE_STORAGE_LOCATION
         }
     }
 
@@ -42,12 +42,16 @@ abstract contract Blacklistable is Initializable {
     }
 
     function _blacklist(address account) internal virtual {
-        _getBlacklistableStorage().list[account] = true;
+        BlacklistableStorage storage $ = _getBlacklistableStorage();
+        if ($.list[account]) revert AccountAlreadyBlacklisted(account);
+        $.list[account] = true;
         emit Blacklisted(account);
     }
 
     function _unBlacklist(address account) internal virtual {
-        _getBlacklistableStorage().list[account] = false;
+        BlacklistableStorage storage $ = _getBlacklistableStorage();
+        if (!$.list[account]) revert AccountNotBlacklisted(account);
+        $.list[account] = false;
         emit UnBlacklisted(account);
     }
 
@@ -61,7 +65,7 @@ abstract contract Blacklistable is Initializable {
     }
 
     modifier notBlacklisted(address account) {
-        if (_isBlacklisted(account)) revert Blacklist(account);
+        if (_isBlacklisted(account)) revert BlacklistedAccount(account);
         _;
     }
 
@@ -72,5 +76,7 @@ abstract contract Blacklistable is Initializable {
 
     /* ======== ERRORS ======== */
 
-    error Blacklist(address account);
+    error BlacklistedAccount(address account);
+    error AccountAlreadyBlacklisted(address account);
+    error AccountNotBlacklisted(address account);
 }

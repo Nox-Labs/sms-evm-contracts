@@ -8,7 +8,7 @@ contract CalculateClaimableRewards is MMSSetup {
         sms.mint(address(mms), MINT_AMOUNT * 100, mockData);
 
         mms.stake(address(this), MINT_AMOUNT, mockData);
-        skip(roundDuration + 1);
+        skip(roundDuration);
     }
 
     function test_ShouldReturnZeroIfNoRewards() public view {
@@ -28,7 +28,9 @@ contract CalculateClaimableRewards is MMSSetup {
 
         amount = bound(amount, 1, claimableRewards);
 
-        mms.claimRewards(currentRoundId, address(this), address(this), amount);
+        _finalizeCurrentRound();
+
+        mms.claimRewards(currentRoundId, address(this), address(this), amount, mockData);
 
         assertEq(
             mms.calculateClaimableRewards(currentRoundId, address(this)), claimableRewards - amount

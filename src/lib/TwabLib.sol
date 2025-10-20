@@ -1,53 +1,54 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.0;
 
 import {RingBufferLib} from "./RingBufferLib.sol";
 
 import {ObservationLib, MAX_CARDINALITY} from "./ObservationLib.sol";
 
-type PeriodOffsetRelativeTimestamp is uint32;
-
-/// @notice Emitted when a balance is decreased by an amount that exceeds the amount available.
-/// @param balance The current balance of the account
-/// @param amount The amount being decreased from the account's balance
-/// @param message An additional message describing the error
-error BalanceLTAmount(uint96 balance, uint96 amount, string message);
-
-/// @notice Emitted when a delegate balance is decreased by an amount that exceeds the amount available.
-/// @param delegateBalance The current delegate balance of the account
-/// @param delegateAmount The amount being decreased from the account's delegate balance
-/// @param message An additional message describing the error
-error DelegateBalanceLTAmount(uint96 delegateBalance, uint96 delegateAmount, string message);
-
-/// @notice Emitted when a request is made for a twab that is not yet finalized.
-/// @param timestamp The requested timestamp
-/// @param currentOverwritePeriodStartedAt The current overwrite period start time
-error TimestampNotFinalized(uint256 timestamp, uint256 currentOverwritePeriodStartedAt);
-
-/// @notice Emitted when a TWAB time range start is after the end.
-/// @param start The start time
-/// @param end The end time
-error InvalidTimeRange(uint256 start, uint256 end);
-
-/// @notice Emitted when there is insufficient history to lookup a twab time range
-/// @param requestedTimestamp The timestamp requested
-/// @param oldestTimestamp The oldest timestamp that can be read
-error InsufficientHistory(
-    PeriodOffsetRelativeTimestamp requestedTimestamp, PeriodOffsetRelativeTimestamp oldestTimestamp
-);
-
 library TwabLib {
+    type PeriodOffsetRelativeTimestamp is uint32;
+
+    /// @notice Emitted when a balance is decreased by an amount that exceeds the amount available.
+    /// @param balance The current balance of the account
+    /// @param amount The amount being decreased from the account's balance
+    /// @param message An additional message describing the error
+    error BalanceLTAmount(uint96 balance, uint96 amount, string message);
+
+    /// @notice Emitted when a delegate balance is decreased by an amount that exceeds the amount available.
+    /// @param delegateBalance The current delegate balance of the account
+    /// @param delegateAmount The amount being decreased from the account's delegate balance
+    /// @param message An additional message describing the error
+    error DelegateBalanceLTAmount(uint96 delegateBalance, uint96 delegateAmount, string message);
+
+    /// @notice Emitted when a request is made for a twab that is not yet finalized.
+    /// @param timestamp The requested timestamp
+    /// @param currentOverwritePeriodStartedAt The current overwrite period start time
+    error TimestampNotFinalized(uint256 timestamp, uint256 currentOverwritePeriodStartedAt);
+
+    /// @notice Emitted when a TWAB time range start is after the end.
+    /// @param start The start time
+    /// @param end The end time
+    error InvalidTimeRange(uint256 start, uint256 end);
+
+    /// @notice Emitted when there is insufficient history to lookup a twab time range
+    /// @param requestedTimestamp The timestamp requested
+    /// @param oldestTimestamp The oldest timestamp that can be read
+    error InsufficientHistory(
+        PeriodOffsetRelativeTimestamp requestedTimestamp,
+        PeriodOffsetRelativeTimestamp oldestTimestamp
+    );
+
     /**
      * @notice Struct ring buffer parameters for single user Account.
      * @param balance Current token balance for an Account
      * @param nextObservationIndex Next uninitialized or updatable ring buffer checkpoint storage slot
-     * @param cardinality Current total "initialized" ring buffer checkpoints for single user Account.
+     * @param bufferCount Current total "initialized" ring buffer checkpoints for single user Account.
      *                    Used to set initial boundary conditions for an efficient binary search.
      */
     struct AccountDetails {
         uint96 balance;
         uint16 nextObservationIndex;
-        uint16 cardinality;
+        uint16 bufferCount;
     }
 
     /**
@@ -58,7 +59,7 @@ library TwabLib {
      */
     struct Account {
         AccountDetails details;
-        ObservationLib.Observation[17520] observations;
+        ObservationLib.Observation[MAX_CARDINALITY] observations;
     }
 
     /**
@@ -87,8 +88,9 @@ library TwabLib {
         )
     {
         accountDetails = _account.details;
-        // record a new observation if the delegateAmount is non-zero and time has not overflowed.
-        isObservationRecorded = block.timestamp <= lastObservationAt(periodLength, periodOffset);
+        // Only record an observation if the current timestamp is within the valid range.
+        isObservationRecorded =
+            block.timestamp <= maxRecordableTimestamp(periodLength, periodOffset);
 
         accountDetails.balance += _amount;
 
@@ -134,8 +136,9 @@ library TwabLib {
             revert BalanceLTAmount(accountDetails.balance, _amount, _revertMessage);
         }
 
-        // record a new observation if the delegateAmount is non-zero and time has not overflowed.
-        isObservationRecorded = block.timestamp <= lastObservationAt(periodLength, periodOffset);
+        // Only record an observation if the current timestamp is within the valid range.
+        isObservationRecorded =
+            block.timestamp <= maxRecordableTimestamp(periodLength, periodOffset);
 
         accountDetails.balance -= _amount;
 
@@ -149,18 +152,18 @@ library TwabLib {
     }
 
     /**
-     * @notice Looks up the oldest observation in the circular buffer.
-     * @param _observations The circular buffer of observations
+     * @notice Looks up the oldest observation in the ring buffer.
+     * @param _observations The ring buffer of observations
      * @param _accountDetails The account details to query with
      * @return index The index of the oldest observation
-     * @return observation The oldest observation in the circular buffer
+     * @return observation The oldest observation in the ring buffer
      */
     function getOldestObservation(
         ObservationLib.Observation[MAX_CARDINALITY] storage _observations,
         AccountDetails memory _accountDetails
     ) internal view returns (uint16 index, ObservationLib.Observation memory observation) {
-        // If the circular buffer has not been fully populated, we go to the beginning of the buffer at index 0.
-        if (_accountDetails.cardinality < MAX_CARDINALITY) {
+        // If the ring buffer has not been fully populated, we go to the beginning of the buffer at index 0.
+        if (_accountDetails.bufferCount < MAX_CARDINALITY) {
             index = 0;
             observation = _observations[0];
         } else {
@@ -170,11 +173,11 @@ library TwabLib {
     }
 
     /**
-     * @notice Looks up the newest observation in the circular buffer.
-     * @param _observations The circular buffer of observations
+     * @notice Looks up the newest observation in the ring buffer.
+     * @param _observations The ring buffer of observations
      * @param _accountDetails The account details to query with
      * @return index The index of the newest observation
-     * @return observation The newest observation in the circular buffer
+     * @return observation The newest observation in the ring buffer
      */
     function getNewestObservation(
         ObservationLib.Observation[MAX_CARDINALITY] storage _observations,
@@ -190,7 +193,7 @@ library TwabLib {
      * @dev Ensure timestamps are safe using requireFinalized
      * @param periodLength The length of an overwrite period
      * @param periodOffset The offset of the first period
-     * @param _observations The circular buffer of observations
+     * @param _observations The ring buffer of observations
      * @param _accountDetails The account details to query with
      * @param _targetTime The time to look up the balance at
      * @return balance The balance at the target time
@@ -229,7 +232,7 @@ library TwabLib {
         pure
         returns (bool)
     {
-        return timestamp > lastObservationAt(periodLength, periodOffset);
+        return timestamp > maxRecordableTimestamp(periodLength, periodOffset);
     }
 
     /**
@@ -237,7 +240,7 @@ library TwabLib {
      * @param periodOffset The offset of the first period
      * @return The largest timestamp at which the TwabController can record a new observation.
      */
-    function lastObservationAt(uint32 periodLength, uint32 periodOffset)
+    function maxRecordableTimestamp(uint32 periodLength, uint32 periodOffset)
         internal
         pure
         returns (uint256)
@@ -250,7 +253,7 @@ library TwabLib {
      * @dev If the timestamps in the range are not exact matches of observations, the balance is extrapolated using the previous observation.
      * @param periodLength The length of an overwrite period
      * @param periodOffset The offset of the first period
-     * @param _observations The circular buffer of observations
+     * @param _observations The ring buffer of observations
      * @param _accountDetails The account details to query with
      * @param _startTime The start of the time range
      * @param _endTime The end of the time range
@@ -309,97 +312,6 @@ library TwabLib {
             / (offsetEndTime - offsetStartTime);
     }
 
-    // function getTwabBetweenPessimistic(
-    //     uint32 periodLength,
-    //     uint32 periodOffset,
-    //     ObservationLib.Observation[MAX_CARDINALITY] storage _observations,
-    //     AccountDetails memory _accountDetails,
-    //     uint256 _startTime,
-    //     uint256 _endTime
-    // ) internal view returns (uint256) {
-    //     if (_endTime < _startTime) {
-    //         revert InvalidTimeRange(_startTime, _endTime);
-    //     }
-
-    //     // if the range extends into the shutdown period, return 0
-    //     if (isShutdownAt(_endTime, periodLength, periodOffset)) {
-    //         return 0;
-    //     }
-
-    //     uint256 currentTime = block.timestamp;
-
-    //     // If current time is before start time, return 0
-    //     if (currentTime < _startTime) {
-    //         return 0;
-    //     }
-
-    //     // If current time is after end time, use the regular getTwabBetween
-    //     if (currentTime >= _endTime) {
-    //         return getTwabBetween(
-    //             periodLength, periodOffset, _observations, _accountDetails, _startTime, _endTime
-    //         );
-    //     }
-
-    //     // Current time is between start and end time
-    //     // We need to calculate TWAB from start time to current time, assuming zero balance from current time to end time
-
-    //     uint256 offsetStartTime = _startTime - periodOffset;
-    //     uint256 offsetCurrentTime = currentTime - periodOffset;
-
-    //     // Get observation at current time
-    //     ObservationLib.Observation memory currentObservation = _getPreviousOrAtObservation(
-    //         _observations,
-    //         _accountDetails,
-    //         PeriodOffsetRelativeTimestamp.wrap(uint32(offsetCurrentTime))
-    //     );
-
-    //     // Get observation at start time
-    //     ObservationLib.Observation memory startObservation = _getPreviousOrAtObservation(
-    //         _observations,
-    //         _accountDetails,
-    //         PeriodOffsetRelativeTimestamp.wrap(uint32(offsetStartTime))
-    //     );
-
-    //     if (offsetStartTime == offsetCurrentTime) {
-    //         // If start time equals current time, the TWAB is just the current balance
-    //         // But we need to account for the zero balance period from current to end
-    //         uint256 totalTime = _endTime - _startTime;
-    //         uint256 zeroBalanceTime = _endTime - currentTime;
-
-    //         // TWAB = (current_balance * (current_time - start_time) + 0 * (end_time - current_time)) / total_time
-    //         // Since current_time == start_time, this simplifies to 0
-    //         return 0;
-    //     }
-
-    //     // Calculate temporary observations if needed
-    //     if (startObservation.timestamp != offsetStartTime) {
-    //         startObservation = _calculateTemporaryObservation(
-    //             startObservation, PeriodOffsetRelativeTimestamp.wrap(uint32(offsetStartTime))
-    //         );
-    //     }
-
-    //     if (currentObservation.timestamp != offsetCurrentTime) {
-    //         currentObservation = _calculateTemporaryObservation(
-    //             currentObservation, PeriodOffsetRelativeTimestamp.wrap(uint32(offsetCurrentTime))
-    //         );
-    //     }
-
-    //     // Calculate cumulative balance from start to current time
-    //     uint256 cumulativeBalanceFromStartToCurrent =
-    //         currentObservation.cumulativeBalance - startObservation.cumulativeBalance;
-    //     uint256 timeFromStartToCurrent = offsetCurrentTime - offsetStartTime;
-
-    //     // Calculate the time period from current to end time (where balance is assumed to be zero)
-    //     uint256 timeFromCurrentToEnd = _endTime - currentTime;
-
-    //     // Total time period
-    //     uint256 totalTime = _endTime - _startTime;
-
-    //     // TWAB = (cumulative_balance_from_start_to_current + 0 * time_from_current_to_end) / total_time
-    //     // This simplifies to: cumulative_balance_from_start_to_current / total_time
-    //     return cumulativeBalanceFromStartToCurrent / totalTime;
-    // }
-
     /**
      * @notice Given an AccountDetails with updated balances, either updates the latest Observation or records a new one
      * @param periodLength The overwrite period length
@@ -437,13 +349,13 @@ library TwabLib {
             _accountDetails.nextObservationIndex =
                 uint16(RingBufferLib.nextIndex(uint256(nextIndex), MAX_CARDINALITY));
 
-            // Prevent the Account specific cardinality from exceeding the MAX_CARDINALITY.
-            // The ring buffer length is limited by MAX_CARDINALITY. IF the account.cardinality
-            // exceeds the max cardinality, new observations would be incorrectly set or the
+            // Prevent the Account specific bufferCount from exceeding the MAX_CARDINALITY.
+            // The ring buffer length is limited by MAX_CARDINALITY. IF the account.bufferCount
+            // exceeds the max bufferCount, new observations would be incorrectly set or the
             // observation would be out of "bounds" of the ring buffer. Once reached the
-            // Account.cardinality will continue to be equal to max cardinality.
-            _accountDetails.cardinality = _accountDetails.cardinality < MAX_CARDINALITY
-                ? _accountDetails.cardinality + 1
+            // Account.bufferCount will continue to be equal to max bufferCount.
+            _accountDetails.bufferCount = _accountDetails.bufferCount < MAX_CARDINALITY
+                ? _accountDetails.bufferCount + 1
                 : MAX_CARDINALITY;
         }
 
@@ -476,15 +388,15 @@ library TwabLib {
     }
 
     /**
-     * @notice Looks up the next observation index to write to in the circular buffer.
+     * @notice Looks up the next observation index to write to in the ring buffer.
      * @dev If the current time is in the same period as the newest observation, we overwrite it.
      * @dev If the current time is in a new period, we increment the index and write a new observation.
      * @param periodLength The length of an overwrite period
      * @param periodOffset The offset of the first period
-     * @param _observations The circular buffer of observations
+     * @param _observations The ring buffer of observations
      * @param _accountDetails The account details to query with
      * @return index The index of the next observation slot to overwrite
-     * @return newestObservation The newest observation in the circular buffer
+     * @return newestObservation The newest observation in the ring buffer
      * @return isNew True if the observation slot is new, false if we're overwriting
      */
     function _getNextObservationIndex(
@@ -507,7 +419,7 @@ library TwabLib {
         );
 
         // Create a new Observation if it's the first period or the current time falls within a new period
-        if (_accountDetails.cardinality == 0 || currentPeriod > newestObservationPeriod) {
+        if (_accountDetails.bufferCount == 0 || currentPeriod > newestObservationPeriod) {
             return (_accountDetails.nextObservationIndex, newestObservation, true);
         }
 
@@ -616,7 +528,7 @@ library TwabLib {
     /**
      * @notice Looks up the newest observation before or at a given timestamp.
      * @dev If an observation is available at the target time, it is returned. Otherwise, the newest observation before the target time is returned.
-     * @param _observations The circular buffer of observations
+     * @param _observations The ring buffer of observations
      * @param _accountDetails The account details to query with
      * @param _offsetTargetTime The timestamp to look up (offset by the period offset)
      * @return prevOrAtObservation The observation
@@ -627,7 +539,7 @@ library TwabLib {
         PeriodOffsetRelativeTimestamp _offsetTargetTime
     ) private view returns (ObservationLib.Observation memory prevOrAtObservation) {
         // If there are no observations, return a zeroed observation
-        if (_accountDetails.cardinality == 0) {
+        if (_accountDetails.bufferCount == 0) {
             return ObservationLib.Observation({cumulativeBalance: 0, balance: 0, timestamp: 0});
         }
 
@@ -640,7 +552,7 @@ library TwabLib {
         if (PeriodOffsetRelativeTimestamp.unwrap(_offsetTargetTime) < prevOrAtObservation.timestamp)
         {
             // if the user didn't have any activity prior to the oldest observation, then we know they had a zero balance
-            if (_accountDetails.cardinality < MAX_CARDINALITY) {
+            if (_accountDetails.bufferCount < MAX_CARDINALITY) {
                 return ObservationLib.Observation({
                     cumulativeBalance: 0,
                     balance: 0,
@@ -656,7 +568,7 @@ library TwabLib {
         }
 
         // We know targetTime >= oldestObservation.timestamp because of the above if statement, so we can return here.
-        if (_accountDetails.cardinality == 1) {
+        if (_accountDetails.bufferCount == 1) {
             return prevOrAtObservation;
         }
 
@@ -672,7 +584,7 @@ library TwabLib {
             return afterOrAtObservation;
         }
         // if we know there is only 1 observation older than the newest
-        if (_accountDetails.cardinality == 2) {
+        if (_accountDetails.bufferCount == 2) {
             return prevOrAtObservation;
         }
 
@@ -683,17 +595,12 @@ library TwabLib {
             newestTwabIndex,
             oldestTwabIndex,
             PeriodOffsetRelativeTimestamp.unwrap(_offsetTargetTime),
-            _accountDetails.cardinality
+            _accountDetails.bufferCount
         );
 
-        // If the afterOrAt is at, we can skip a temporary Observation computation by returning it here
-        if (
-            afterOrAtObservation.timestamp
-                == PeriodOffsetRelativeTimestamp.unwrap(_offsetTargetTime)
-        ) {
-            return afterOrAtObservation;
-        }
-
+        // After the fix in ObservationLib, `prevOrAtObservation` is now guaranteed to be the correct value
+        // (either the exact match or the one immediately preceding the target time).
+        // The previous check for `afterOrAtObservation` is no longer necessary.
         return prevOrAtObservation;
     }
 

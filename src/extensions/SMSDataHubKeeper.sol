@@ -14,15 +14,15 @@ abstract contract SMSDataHubKeeper is Initializable, Base {
     }
 
     // keccak256(abi.encode(uint256(keccak256("sms.storage.SMSDataHubKeeper")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant SMSDataHubKeeperStorageLocation =
+    bytes32 private constant SMS_DATA_HUB_KEEPER_STORAGE_LOCATION =
         0x05820494ab0bfc87d0ca29635f87a151aa96e527fc389c40d93cc1f9b63d9a00;
 
-    function __SMSDataHubKeeper_init(address _smsDataHub)
+    function __SMSDataHubKeeper_init(ISMSDataHub _smsDataHub)
         internal
-        noZeroAddress(_smsDataHub)
+        noZeroAddress(address(_smsDataHub))
         onlyInitializing
     {
-        _getSMSDataHubKeeperStorage().smsDataHub = ISMSDataHub(_smsDataHub);
+        _getSMSDataHubKeeperStorage().smsDataHub = _smsDataHub;
     }
 
     function _getSMSDataHubKeeperStorage()
@@ -31,7 +31,7 @@ abstract contract SMSDataHubKeeper is Initializable, Base {
         returns (SMSDataHubKeeperStorage storage $)
     {
         assembly {
-            $.slot := SMSDataHubKeeperStorageLocation
+            $.slot := SMS_DATA_HUB_KEEPER_STORAGE_LOCATION
         }
     }
 

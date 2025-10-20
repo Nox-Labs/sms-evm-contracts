@@ -32,6 +32,37 @@ contract FinalizeRound is MMSSetup {
         assertEq(isFinalized, true);
     }
 
+    function testFuzz_ShouldRecalculateRewardsWithNewBp(uint256 amount) public {
+        amount = bound(amount, 10, MINT_AMOUNT);
+        mms.stake(address(this), uint96(amount), mockData);
+        skip(roundDuration);
+
+        assertApproxEqAbs(
+            mms.calculateTotalRewardsRound(currentRoundId), _multiplyAmountByBp(amount), dust
+        );
+
+        mms.finalizeRound(currentRoundId, ROUND_BP / 2);
+
+        assertApproxEqAbs(
+            mms.calculateTotalRewardsRound(currentRoundId), _multiplyAmountByBp(amount) / 2, dust
+        );
+    }
+
+    function test_ShouldFinalizeRoundAndChangeBp(uint256 amount) public {
+        amount = bound(amount, 1, 10000);
+        mms.stake(address(this), uint96(amount), mockData);
+        skip(roundDuration);
+
+        (uint32 bpBefore,,) = mms.getRoundInfo(currentRoundId);
+
+        uint32 newBp = bpBefore - 100;
+
+        mms.finalizeRound(currentRoundId, newBp);
+
+        (uint32 bpAfter,,) = mms.getRoundInfo(currentRoundId);
+        assertEq(bpAfter, newBp);
+    }
+
     function test_RevertIfRoundNotEnded() public {
         vm.expectRevert(IMMS.RoundNotEnded.selector);
         mms.finalizeRound(currentRoundId);

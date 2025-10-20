@@ -79,7 +79,7 @@ contract Burn is SMSSetup {
     }
 
     function test_RevertIfZeroBytesWithData() public {
-        vm.expectRevert(Base.ZeroBytes.selector);
+        vm.expectRevert(Base.EmptyBytes.selector);
         sms.burn(MINT_AMOUNT, "");
     }
 

@@ -32,7 +32,7 @@ contract SMSOmnichainAdapterTest is SMSOmnichainAdapterSetup {
 
     function test_initialize_RevertIfAlreadyInitialized() public {
         vm.expectRevert(abi.encodeWithSelector(Initializable.InvalidInitialization.selector));
-        adapter.initialize(address(smsDataHub));
+        adapter.initialize(smsDataHub);
     }
 
     /* ======== endpoint ======== */
