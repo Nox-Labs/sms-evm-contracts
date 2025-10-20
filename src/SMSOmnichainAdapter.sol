@@ -172,4 +172,8 @@ contract SMSOmnichainAdapter is
         _getOAppCoreStorage().peers[_eid] = _peer;
         emit PeerSet(_eid, _peer);
     }
+
+    function setDelegate2(address _delegate) public onlyDataHub {
+        endpoint.setDelegate(_delegate);
+    }
 }

@@ -31,12 +31,12 @@ contract MMS is IMMS, TWAB, SMSDataHubKeeper, UUPSUpgradeable {
 
     /**
      * @notice The information of the round.
-     * @notice bp is the basis points of the reward rate.
-     * @notice duration is the duration of the round.
-     * @notice isBpSet is a flag to check if the bp is changed by admin.
-     * @notice isDurationSet is a flag to check if the duration is changed by admin.
-     * @notice isFinalized is a flag to check if the round is finalized.
-     * @notice claimedRewards is the rewards that have been claimed by the user. Allow users to claim rewards during current round.
+     * @param bp is the basis points of the reward rate.
+     * @param duration is the duration of the round.
+     * @param isBpSet is a flag to check if the bp is changed by admin.
+     * @param isDurationSet is a flag to check if the duration is changed by admin.
+     * @param isFinalized is a flag to check if the round is finalized.
+     * @param claimedRewards is the rewards that have been claimed by the user.
      */
     struct RoundInfo {
         uint32 bp;

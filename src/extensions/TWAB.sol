@@ -37,6 +37,7 @@ contract TWAB is Initializable, IERC20, Base {
             $.slot := TWAB_STORAGE_LOCATION
         }
     }
+
     /**
      * @notice Construct a new TwabController.
      * @dev Reverts if the period offset is in the future.
@@ -45,7 +46,6 @@ contract TWAB is Initializable, IERC20, Base {
      * @param _periodOffset Sets the beginning timestamp for the first period. This allows us to maximize storage as well
      *      as line up periods with a chosen timestamp.
      */
-
     function __TWAB_init(uint32 _periodLength, uint32 _periodOffset) internal onlyInitializing {
         if (_periodOffset > block.timestamp) {
             revert PeriodOffsetInFuture(_periodOffset);

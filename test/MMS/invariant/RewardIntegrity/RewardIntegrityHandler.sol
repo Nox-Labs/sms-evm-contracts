@@ -89,6 +89,8 @@ contract RewardIntegrityHandler is Test {
         uint32 currentRoundId = mms.getCurrentRoundId();
         if (currentRoundId == 0) return;
         roundToClaim = uint32(bound(roundToClaim, 0, currentRoundId - 1));
+        (,, bool isFinalized) = mms.getRoundInfo(roundToClaim);
+        if (!isFinalized) return;
         uint256 claimable = mms.calculateClaimableRewards(roundToClaim, staker);
         if (claimable == 0) return;
 

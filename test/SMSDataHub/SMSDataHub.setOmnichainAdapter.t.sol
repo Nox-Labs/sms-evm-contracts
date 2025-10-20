@@ -9,12 +9,6 @@ contract SetOmnichainAdapter is SMSDataHubSetup {
         assertEq(newSMSDataHub.getOmnichainAdapter(), mockAddress);
     }
 
-    function test_ShouldRevertIfAlreadySet() public {
-        newSMSDataHub.setOmnichainAdapter(mockAddress);
-        vm.expectRevert(ISMSDataHub.AlreadySet.selector);
-        newSMSDataHub.setOmnichainAdapter(mockAddress);
-    }
-
     function test_ShouldRevertIfNotAdmin() public {
         vm.prank(user);
         vm.expectRevert(Base.Unauthorized.selector);

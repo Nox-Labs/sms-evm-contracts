@@ -14,5 +14,6 @@ contract SMSDataHubSetup is BaseSetup {
         newSMSDataHub = SMSDataHubMainChain(
             SMSDeployer.deploy_SMSDataHubMainChain(_create3Factory, address(this), address(this))
         );
+        newSMSDataHub.setOmnichainAdapter(address(adapter));
     }
 }

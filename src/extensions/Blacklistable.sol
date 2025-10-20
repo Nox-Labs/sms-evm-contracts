@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {Base} from "./Base.sol";
 
 abstract contract Blacklistable is Initializable {
     /// @custom:storage-location erc7201:sms.storage.blacklistable
@@ -28,6 +29,7 @@ abstract contract Blacklistable is Initializable {
     }
 
     function blacklist(address account) external onlyBlacklister {
+        if (account == address(0)) revert Base.ZeroAddress();
         _blacklist(account);
     }
 

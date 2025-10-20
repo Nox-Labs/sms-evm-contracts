@@ -58,6 +58,11 @@ abstract contract SMSDataHubKeeper is Initializable, Base {
         _;
     }
 
+    modifier onlyDataHub() {
+        if (msg.sender != address(getSMSDataHub())) revert Unauthorized();
+        _;
+    }
+
     modifier noPauseLevel(PauseLevel _pauseLevel) {
         if (getSMSDataHub().getPauseLevel() >= _pauseLevel) revert Paused();
         _;

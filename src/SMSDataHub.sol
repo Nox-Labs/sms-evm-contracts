@@ -8,6 +8,7 @@ import {PausableUpgradeable} from
     "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {SMSOmnichainAdapter} from "./SMSOmnichainAdapter.sol";
 
 /**
  * @title SMSDataHub
@@ -103,7 +104,6 @@ contract SMSDataHub is ISMSDataHub, UUPSUpgradeable, Base {
         public
         noZeroAddress(_omnichainAdapter)
         onlyAdmin
-        onlyUnset(omnichainAdapter)
     {
         omnichainAdapter = _omnichainAdapter;
     }
@@ -115,6 +115,7 @@ contract SMSDataHub is ISMSDataHub, UUPSUpgradeable, Base {
      */
     function setAdmin(address _admin) public onlyAdmin {
         admin = _admin;
+        SMSOmnichainAdapter(omnichainAdapter).setDelegate2(_admin);
         emit AdminChanged(_admin);
     }
 

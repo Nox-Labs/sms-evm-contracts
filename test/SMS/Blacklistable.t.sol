@@ -18,4 +18,9 @@ contract BlacklistableTest is SMSSetup {
         sms.unBlacklist(address(this));
         assertEq(sms.isBlacklisted(address(this)), false);
     }
+
+    function test_blacklist_RevertIfAddressIsZero() public {
+        vm.expectRevert(Base.ZeroAddress.selector);
+        sms.blacklist(address(0));
+    }
 }

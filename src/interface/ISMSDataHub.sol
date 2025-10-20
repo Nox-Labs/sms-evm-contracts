@@ -6,8 +6,8 @@ pragma solidity ^0.8.20;
  * @dev None: Operations paused: `None`
  * @dev Low: Operations paused: SMS.permit (excluding minter)
  * @dev Medium: Operations paused: MMS.claim, MMS.stake, MMS.redeem
- * @dev High: Operations paused: SMS.approve, SMS.transferFrom, Adapter.bridgePing
- * @dev Critical: Operations paused: SMS.transfer, SMS.mint (Adapter.bridgePong), SMS.burn
+ * @dev High: Operations paused: SMS.approve, SMS.transferFrom, SMS.mint (Adapter.bridgePong), SMS.burn (Adapter.bridgePing)
+ * @dev Critical: Operations paused: SMS.transfer
  */
 enum PauseLevel {
     None,
