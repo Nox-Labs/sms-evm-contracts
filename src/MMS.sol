@@ -12,6 +12,7 @@ import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/U
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 /**
  * @title MMS
@@ -28,6 +29,7 @@ import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
  */
 contract MMS is IMMS, TWAB, SMSDataHubKeeper, UUPSUpgradeable {
     using SafeERC20 for ISMS;
+    using SafeCast for uint256;
 
     /**
      * @notice The information of the round.
@@ -229,7 +231,7 @@ contract MMS is IMMS, TWAB, SMSDataHubKeeper, UUPSUpgradeable {
     {
         uint256 claimableRewards = calculateClaimableRewards(roundId, user);
         _claimRewards(roundId, user, claimableRewards, address(this));
-        _mint(user, uint96(claimableRewards));
+        _mint(user, claimableRewards.toUint96());
 
         emit RewardsCompounded(roundId, user, claimableRewards, data);
     }

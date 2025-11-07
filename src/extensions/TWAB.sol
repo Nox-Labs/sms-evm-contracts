@@ -68,7 +68,7 @@ contract TWAB is Initializable, IERC20, Base {
     }
 
     function transfer(address _to, uint256 _amount) public noZeroAddress(_to) returns (bool) {
-        _transfer(msg.sender, _to, uint96(_amount));
+        _transfer(msg.sender, _to, _amount.toUint96());
         return true;
     }
 
@@ -88,7 +88,7 @@ contract TWAB is Initializable, IERC20, Base {
         returns (bool)
     {
         _spendAllowance(_from, msg.sender, _amount);
-        _transfer(_from, _to, uint96(_amount));
+        _transfer(_from, _to, _amount.toUint96());
         return true;
     }
 
