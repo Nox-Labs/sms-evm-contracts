@@ -104,6 +104,7 @@ contract MMS is IMMS, TWAB, SMSDataHubKeeper, UUPSUpgradeable {
         noZeroAmount(_firstRoundStartTimestamp)
     {
         if (_roundBp > BP_PRECISION) revert InvalidBp();
+        if (_roundDuration % _periodLength != 0) revert InvalidDuration();
 
         __TWAB_init(_periodLength, _firstRoundStartTimestamp);
         __SMSDataHubKeeper_init(_smsDataHub);
@@ -414,6 +415,8 @@ contract MMS is IMMS, TWAB, SMSDataHubKeeper, UUPSUpgradeable {
      * @notice Emits RoundDurationChanged event.
      */
     function changeNextRoundDuration(uint32 duration) external noZeroAmount(duration) onlyAdmin {
+        if (duration % getPeriodLength() != 0) revert InvalidDuration();
+
         uint32 nextRoundId = getCurrentRoundId() + 1;
         _roundInfo[nextRoundId].duration = duration;
         _roundInfo[nextRoundId].isDurationSet = true;

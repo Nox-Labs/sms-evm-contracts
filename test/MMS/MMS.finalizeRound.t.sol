@@ -68,19 +68,6 @@ contract FinalizeRound is MMSSetup {
         mms.finalizeRound(currentRoundId);
     }
 
-    function test_RevertIfTwabNotFinalized() public {
-        uint32 breakDuration = 1000; // in base setup roundDuration end timestamp and twab finalize observation is the same, we need to break this to test the revert
-
-        mms.changeNextRoundDuration(roundDuration + breakDuration);
-        skip(roundDuration);
-        mms.finalizeRound(currentRoundId);
-        mms.stake(address(this), MINT_AMOUNT, mockData);
-        skip(roundDuration + breakDuration);
-
-        vm.expectRevert(IMMS.TwabNotFinalized.selector);
-        mms.finalizeRound(currentRoundId + 1);
-    }
-
     function test_ShouldEmitEvent() public {
         skip(roundDuration);
 

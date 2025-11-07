@@ -68,7 +68,7 @@ contract MMSTest is MMSSetup {
         (uint32 bp0, uint32 duration0,) = mms.getRoundInfo(roundId0);
         (uint32 bp1, uint32 duration1,) = mms.getRoundInfo(roundId1);
 
-        uint32 roundId1NewDuration = duration0 - 100;
+        uint32 roundId1NewDuration = duration0 - 1 days;
         uint32 roundId1NewBp = bp0 - 100;
 
         assertNotEq(bp0, 0);

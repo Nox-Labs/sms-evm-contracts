@@ -50,4 +50,5 @@ interface IMMS is IERC20Metadata {
     error InsufficientRewards(uint256 amount, uint256 claimableRewards);
     error InvalidBp();
     error TwabNotFinalized();
+    error InvalidDuration();
 }
