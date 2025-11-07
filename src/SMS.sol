@@ -37,6 +37,8 @@ contract SMS is ISMS, Blacklistable, SMSDataHubKeeper, UUPSUpgradeable, ERC20Per
         __SMSDataHubKeeper_init(_smsDataHub);
         __ERC20_init("SMS", "SMS");
         __ERC20Permit_init(name());
+        __Blacklistable_init();
+        __UUPSUpgradeable_init();
     }
 
     /* ======== MUTATIVE ======== */
@@ -130,10 +132,11 @@ contract SMS is ISMS, Blacklistable, SMSDataHubKeeper, UUPSUpgradeable, ERC20Per
     function transferFrom(address from, address to, uint256 amount, bytes calldata data)
         public
         noPauseLevel(PauseLevel.High)
-        returns (bool success)
+        returns (bool)
     {
-        success = super.transferFrom(from, to, amount);
-        if (success) emit Transfer(from, to, amount, data);
+        super.transferFrom(from, to, amount);
+        emit Transfer(from, to, amount, data);
+        return true;
     }
 
     function transfer(address to, uint256 amount)
@@ -148,10 +151,11 @@ contract SMS is ISMS, Blacklistable, SMSDataHubKeeper, UUPSUpgradeable, ERC20Per
     function transfer(address to, uint256 amount, bytes calldata data)
         public
         noPauseLevel(PauseLevel.Critical)
-        returns (bool success)
+        returns (bool)
     {
-        success = super.transfer(to, amount);
-        if (success) emit Transfer(msg.sender, to, amount, data);
+        super.transfer(to, amount);
+        emit Transfer(msg.sender, to, amount, data);
+        return true;
     }
 
     /* ======== VIEW ======== */

@@ -50,7 +50,7 @@ contract MMS is IMMS, TWAB, SMSDataHubKeeper, UUPSUpgradeable {
     }
 
     /**
-     * @notice The maximum number of rounds to .
+     * @notice The maximum number of rounds to rewind in tx.
      */
     uint8 public constant MAX_ROUND_REWIND = 5;
 
@@ -68,7 +68,7 @@ contract MMS is IMMS, TWAB, SMSDataHubKeeper, UUPSUpgradeable {
 
     /**
      * @notice The timestamps of the rounds.
-     * @dev The length of the array - 2 is the number of rounds.
+     * @dev The length of the array minus 2 equals to the number of rounds.
      * @dev The first element is the start timestamp of the first round.
      * @dev The second element is the end timestamp of the first round and the start timestamp of the second round.
      * @dev [startTimestampOfRound0, startTimestampOfRound1, startTimestampOfRound2, ...]
@@ -108,6 +108,7 @@ contract MMS is IMMS, TWAB, SMSDataHubKeeper, UUPSUpgradeable {
 
         __TWAB_init(_periodLength, _firstRoundStartTimestamp);
         __SMSDataHubKeeper_init(_smsDataHub);
+        __UUPSUpgradeable_init();
 
         roundTimestamps.push(_firstRoundStartTimestamp);
         roundTimestamps.push(_firstRoundStartTimestamp + _roundDuration);

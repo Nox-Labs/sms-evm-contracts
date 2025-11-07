@@ -42,6 +42,7 @@ contract SMSDataHub is ISMSDataHub, UUPSUpgradeable, Base {
         noZeroAddress(_admin)
         noZeroAddress(_minter)
     {
+        __UUPSUpgradeable_init();
         admin = _admin;
         minter = _minter;
         pauseLevel = PauseLevel.None;

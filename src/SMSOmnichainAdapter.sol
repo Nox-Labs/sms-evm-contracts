@@ -54,6 +54,7 @@ contract SMSOmnichainAdapter is
     function initialize(ISMSDataHub _smsDataHub) public initializer {
         __SMSDataHubKeeper_init(_smsDataHub);
         __OApp_init(ISMSDataHub(_smsDataHub).getAdmin());
+        __UUPSUpgradeable_init();
     }
 
     /* ======== BRIDGE ======== */

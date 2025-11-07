@@ -14,12 +14,6 @@ library TwabLib {
     /// @param message An additional message describing the error
     error BalanceLTAmount(uint96 balance, uint96 amount, string message);
 
-    /// @notice Emitted when a delegate balance is decreased by an amount that exceeds the amount available.
-    /// @param delegateBalance The current delegate balance of the account
-    /// @param delegateAmount The amount being decreased from the account's delegate balance
-    /// @param message An additional message describing the error
-    error DelegateBalanceLTAmount(uint96 delegateBalance, uint96 delegateAmount, string message);
-
     /// @notice Emitted when a request is made for a twab that is not yet finalized.
     /// @param timestamp The requested timestamp
     /// @param currentOverwritePeriodStartedAt The current overwrite period start time
@@ -63,7 +57,7 @@ library TwabLib {
     }
 
     /**
-     * @notice Increase a user's balance and delegate balance by a given amount.
+     * @notice Increase a user's balance by a given amount.
      * @dev This function mutates the provided account.
      * @param periodLength The length of an overwrite period
      * @param periodOffset The offset of the first period
@@ -94,7 +88,7 @@ library TwabLib {
 
         accountDetails.balance += _amount;
 
-        // Only record a new Observation if the users delegateBalance has changed.
+        // Only record a new Observation if the users balance has changed.
         if (isObservationRecorded) {
             (observation, isNew, accountDetails) =
                 _recordObservation(periodLength, periodOffset, accountDetails, _account);
@@ -104,7 +98,7 @@ library TwabLib {
     }
 
     /**
-     * @notice Decrease a user's balance and delegate balance by a given amount.
+     * @notice Decrease a user's balance by a given amount.
      * @dev This function mutates the provided account.
      * @param periodLength The length of an overwrite period
      * @param periodOffset The offset of the first period
@@ -142,7 +136,7 @@ library TwabLib {
 
         accountDetails.balance -= _amount;
 
-        // Only record a new Observation if the users delegateBalance has changed.
+        // Only record a new Observation if the users balance has changed.
         if (isObservationRecorded) {
             (observation, isNew, accountDetails) =
                 _recordObservation(periodLength, periodOffset, accountDetails, _account);

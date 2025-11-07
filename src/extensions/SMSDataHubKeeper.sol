@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
 pragma solidity ^0.8.20;
 
-import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-
 import {ISMSDataHub, PauseLevel} from "../interface/ISMSDataHub.sol";
 import {ISMS} from "../interface/ISMS.sol";
 import {Base} from "./Base.sol";
 
-abstract contract SMSDataHubKeeper is Initializable, Base {
+abstract contract SMSDataHubKeeper is Base {
     /// @custom:storage-location erc7201:sms.storage.SMSDataHubKeeper
     struct SMSDataHubKeeperStorage {
         ISMSDataHub smsDataHub;
