@@ -453,13 +453,11 @@ library TwabLib {
         PeriodOffsetRelativeTimestamp _offsetTimestamp
     ) private pure returns (uint128) {
         // new cumulative balance = provided cumulative balance (or zero) + (current balance * elapsed seconds)
-        unchecked {
-            return uint128(
-                uint256(_observation.cumulativeBalance)
-                    + uint256(_observation.balance)
-                        * (PeriodOffsetRelativeTimestamp.unwrap(_offsetTimestamp) - _observation.timestamp)
-            );
-        }
+        return uint128(
+            uint256(_observation.cumulativeBalance)
+                + uint256(_observation.balance)
+                    * (PeriodOffsetRelativeTimestamp.unwrap(_offsetTimestamp) - _observation.timestamp)
+        );
     }
 
     /**
