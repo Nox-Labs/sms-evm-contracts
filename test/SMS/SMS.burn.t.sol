@@ -29,7 +29,7 @@ contract Burn is SMSSetup {
         assertEq(totalSupplyAfter, totalSupplyBefore - MINT_AMOUNT);
     }
 
-    function test_RevertIfNotAdminOrAdapter() public {
+    function test_RevertIfNotCrossChainMinter() public {
         vm.prank(user);
         vm.expectRevert(Base.Unauthorized.selector);
         sms.burn(MINT_AMOUNT);

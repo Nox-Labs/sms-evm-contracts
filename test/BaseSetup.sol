@@ -60,7 +60,7 @@ contract BaseSetup is LayerZeroDevtoolsHelper {
         create3Factory = Create3Deployer.deploy_create3Factory("SMS.CREATE3Factory");
         create3Factory2 = Create3Deployer.deploy_create3Factory("SMS.CREATE3Factory2");
 
-        smsDataHub = create3Factory.deploy_SMSDataHubMainChain(address(this), address(this));
+        smsDataHub = create3Factory.deploy_SMSDataHubMainChain(address(this));
         sms = SMS(create3Factory.deploy_SMS(smsDataHub));
         mms = MMS(
             create3Factory.deploy_MMS(
@@ -68,21 +68,25 @@ contract BaseSetup is LayerZeroDevtoolsHelper {
             )
         );
         adapter = SMSOmnichainAdapter(
-            create3Factory.deploy_SMSOmnichainAdapter(smsDataHub, address(endPointA))
+            create3Factory.deploy_SMSOmnichainAdapter(smsDataHub, address(endPointA), address(this))
         );
 
         smsDataHub.setSMS(address(sms));
         smsDataHub.setMMS(address(mms));
-        smsDataHub.setOmnichainAdapter(address(adapter));
+        smsDataHub.grantRole(smsDataHub.SMS_MINTER_ROLE(), address(this));
+        smsDataHub.grantRole(smsDataHub.SMS_CROSSCHAIN_MINTER_ROLE(), address(adapter));
 
-        smsDataHub2 = SMSDataHub(create3Factory2.deploy_SMSDataHub(address(this), address(this)));
+        smsDataHub2 = SMSDataHub(create3Factory2.deploy_SMSDataHub(address(this)));
         sms2 = SMS(create3Factory2.deploy_SMS(smsDataHub2));
         adapter2 = SMSOmnichainAdapter(
-            create3Factory2.deploy_SMSOmnichainAdapter(smsDataHub2, address(endPointB))
+            create3Factory2.deploy_SMSOmnichainAdapter(
+                smsDataHub2, address(endPointB), address(this)
+            )
         );
 
         smsDataHub2.setSMS(address(sms2));
-        smsDataHub2.setOmnichainAdapter(address(adapter2));
+        smsDataHub2.grantRole(smsDataHub2.SMS_MINTER_ROLE(), address(this));
+        smsDataHub2.grantRole(smsDataHub2.SMS_CROSSCHAIN_MINTER_ROLE(), address(adapter2));
 
         address[] memory adapters = new address[](2);
         adapters[0] = address(adapter);

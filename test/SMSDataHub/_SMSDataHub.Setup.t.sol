@@ -12,8 +12,8 @@ contract SMSDataHubSetup is BaseSetup {
         ICREATE3Factory _create3Factory =
             Create3Deployer.deploy_create3Factory("SMS.CREATE3Factory.2");
         newSMSDataHub = SMSDataHubMainChain(
-            SMSDeployer.deploy_SMSDataHubMainChain(_create3Factory, address(this), address(this))
+            SMSDeployer.deploy_SMSDataHubMainChain(_create3Factory, address(this))
         );
-        newSMSDataHub.setOmnichainAdapter(address(adapter));
+        newSMSDataHub.grantRole(newSMSDataHub.SMS_CROSSCHAIN_MINTER_ROLE(), address(adapter2));
     }
 }

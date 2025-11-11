@@ -30,24 +30,6 @@ contract SMSDataHubTest is SMSDataHubSetup {
         smsDataHub.upgradeToAndCall(implementation, "");
     }
 
-    /* ======== getAdmin ======== */
-
-    function test_getAdmin_ShouldReturnAdmin() public view {
-        assertEq(smsDataHub.getAdmin(), address(this));
-    }
-
-    /* ======== getMinter ======== */
-
-    function test_getMinter_ShouldReturnMinter() public view {
-        assertEq(smsDataHub.getMinter(), address(this));
-    }
-
-    /* ======== getOmnichainAdapter ======== */
-
-    function test_getOmnichainAdapter_ShouldReturnOmnichainAdapter() public view {
-        assertEq(smsDataHub.getOmnichainAdapter(), address(adapter));
-    }
-
     /* ======== getSMS ======== */
 
     function test_getSMS_ShouldReturnSMS() public view {
@@ -64,6 +46,6 @@ contract SMSDataHubTest is SMSDataHubSetup {
 
     function test_initialize_RevertIfAlreadyInitialized() public {
         vm.expectRevert(abi.encodeWithSelector(Initializable.InvalidInitialization.selector));
-        smsDataHub.initialize(address(this), address(this));
+        smsDataHub.initialize(address(this));
     }
 }

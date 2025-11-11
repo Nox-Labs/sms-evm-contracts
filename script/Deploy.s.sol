@@ -72,14 +72,14 @@ contract Deploy is Script, FileHelpers, Fork {
 
         if (chainId == MAIN_CHAIN_ID) {
             (smsDataHub, sms, mms, omnichainAdapter) =
-                _mainChainDeploy(create3Factory, DEFAULT_ADMIN, MINTER, lzEndpoint);
+                _mainChainDeploy(create3Factory, DEFAULT_ADMIN, lzEndpoint);
         } else {
             (smsDataHub, sms, omnichainAdapter) =
-                _peripheralChainDeploy(create3Factory, DEFAULT_ADMIN, MINTER, lzEndpoint);
+                _peripheralChainDeploy(create3Factory, DEFAULT_ADMIN, lzEndpoint);
         }
 
         smsDataHub.setSMS(address(sms));
-        smsDataHub.setOmnichainAdapter(address(omnichainAdapter));
+        smsDataHub.grantRole(smsDataHub.SMS_CROSSCHAIN_MINTER_ROLE(), address(omnichainAdapter));
         if (chainId == MAIN_CHAIN_ID) {
             ISMSDataHubMainChain(address(smsDataHub)).setMMS(address(mms));
         }
@@ -113,26 +113,26 @@ contract Deploy is Script, FileHelpers, Fork {
     function _peripheralChainDeploy(
         ICREATE3Factory create3Factory,
         address defaultAdmin,
-        address minter,
         address lzEndpoint
     ) internal returns (ISMSDataHub smsDataHub, ISMS sms, ISMSOmnichainAdapter omnichainAdapter) {
-        smsDataHub = create3Factory.deploy_SMSDataHubMainChain(defaultAdmin, minter);
+        smsDataHub = create3Factory.deploy_SMSDataHubMainChain(defaultAdmin);
         sms = create3Factory.deploy_SMS(smsDataHub);
-        omnichainAdapter = create3Factory.deploy_SMSOmnichainAdapter(smsDataHub, lzEndpoint);
+        omnichainAdapter =
+            create3Factory.deploy_SMSOmnichainAdapter(smsDataHub, lzEndpoint, defaultAdmin);
     }
 
     function _mainChainDeploy(
         ICREATE3Factory create3Factory,
         address defaultAdmin,
-        address minter,
         address lzEndpoint
     )
         internal
         returns (ISMSDataHub smsDataHub, ISMS sms, IMMS mms, ISMSOmnichainAdapter omnichainAdapter)
     {
-        smsDataHub = create3Factory.deploy_SMSDataHubMainChain(defaultAdmin, minter);
+        smsDataHub = create3Factory.deploy_SMSDataHubMainChain(defaultAdmin);
         sms = create3Factory.deploy_SMS(smsDataHub);
-        omnichainAdapter = create3Factory.deploy_SMSOmnichainAdapter(smsDataHub, lzEndpoint);
+        omnichainAdapter =
+            create3Factory.deploy_SMSOmnichainAdapter(smsDataHub, lzEndpoint, defaultAdmin);
         mms = create3Factory.deploy_MMS(
             smsDataHub, PERIOD_LENGTH, FIRST_ROUND_START_TIMESTAMP, ROUND_BP, ROUND_DURATION
         );

@@ -20,7 +20,7 @@ import {ICREATE3Factory} from "@layerzerolabs/create3-factory/contracts/ICREATE3
 library SMSDeployer {
     using Create3Deployer for ICREATE3Factory;
 
-    function deploy_SMSDataHub(ICREATE3Factory factory, address defaultAdmin, address minter)
+    function deploy_SMSDataHub(ICREATE3Factory factory, address defaultAdmin)
         internal
         returns (SMSDataHub smsDataHub)
     {
@@ -29,27 +29,22 @@ library SMSDeployer {
         smsDataHub = SMSDataHub(
             factory.create3Deploy(
                 type(ERC1967Proxy).creationCode,
-                abi.encode(
-                    implementation, abi.encodeCall(SMSDataHub.initialize, (defaultAdmin, minter))
-                ),
+                abi.encode(implementation, abi.encodeCall(SMSDataHub.initialize, (defaultAdmin))),
                 "SMSDataHub"
             )
         );
     }
 
-    function deploy_SMSDataHubMainChain(
-        ICREATE3Factory factory,
-        address defaultAdmin,
-        address minter
-    ) internal returns (SMSDataHubMainChain smsDataHub) {
+    function deploy_SMSDataHubMainChain(ICREATE3Factory factory, address defaultAdmin)
+        internal
+        returns (SMSDataHubMainChain smsDataHub)
+    {
         address implementation = address(new SMSDataHubMainChain());
 
         smsDataHub = SMSDataHubMainChain(
             factory.create3Deploy(
                 type(ERC1967Proxy).creationCode,
-                abi.encode(
-                    implementation, abi.encodeCall(SMSDataHub.initialize, (defaultAdmin, minter))
-                ),
+                abi.encode(implementation, abi.encodeCall(SMSDataHub.initialize, (defaultAdmin))),
                 "SMSDataHubMainChain"
             )
         );
@@ -98,7 +93,8 @@ library SMSDeployer {
     function deploy_SMSOmnichainAdapter(
         ICREATE3Factory factory,
         ISMSDataHub smsDataHub,
-        address lzEndpoint
+        address lzEndpoint,
+        address admin
     ) internal returns (SMSOmnichainAdapter omnichainAdapter) {
         address implementation = address(new SMSOmnichainAdapter(lzEndpoint));
 
@@ -106,7 +102,8 @@ library SMSDeployer {
             factory.create3Deploy(
                 type(ERC1967Proxy).creationCode,
                 abi.encode(
-                    implementation, abi.encodeCall(SMSOmnichainAdapter.initialize, (smsDataHub))
+                    implementation,
+                    abi.encodeCall(SMSOmnichainAdapter.initialize, (smsDataHub, admin))
                 ),
                 "SMSOmnichainAdapter"
             )
