@@ -41,18 +41,22 @@ abstract contract SMSDataHubKeeper is Base {
         sms = ISMS(getSMSDataHub().getSMS());
     }
 
-    modifier onlyMinter() {
-        if (msg.sender != getSMSDataHub().getMinter()) revert Unauthorized();
-        _;
-    }
-
     modifier onlyAdmin() {
-        if (msg.sender != getSMSDataHub().getAdmin()) revert Unauthorized();
+        if (!getSMSDataHub().hasRole(bytes32(0), msg.sender)) revert Unauthorized();
         _;
     }
 
-    modifier onlyAdapter() {
-        if (msg.sender != getSMSDataHub().getOmnichainAdapter()) revert Unauthorized();
+    modifier onlyMinter() {
+        ISMSDataHub smsDataHub = getSMSDataHub();
+        if (!smsDataHub.hasRole(smsDataHub.SMS_MINTER_ROLE(), msg.sender)) revert Unauthorized();
+        _;
+    }
+
+    modifier onlyCrossChainMinter() {
+        ISMSDataHub smsDataHub = getSMSDataHub();
+        if (!smsDataHub.hasRole(smsDataHub.SMS_CROSSCHAIN_MINTER_ROLE(), msg.sender)) {
+            revert Unauthorized();
+        }
         _;
     }
 

@@ -51,9 +51,9 @@ contract SMSOmnichainAdapter is
      * @notice Initializes the contract.
      * @param _smsDataHub The address of the SMSDataHub contract.
      */
-    function initialize(ISMSDataHub _smsDataHub) public initializer {
+    function initialize(ISMSDataHub _smsDataHub, address _admin) public initializer {
         __SMSDataHubKeeper_init(_smsDataHub);
-        __OApp_init(ISMSDataHub(_smsDataHub).getAdmin());
+        __OApp_init(_admin);
         __UUPSUpgradeable_init();
     }
 

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
 pragma solidity ^0.8.20;
 
+import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
+
 /**
  * @notice Each pause level is a subset of the previous one.
  * @dev None: Operations paused: `None`
@@ -17,24 +19,17 @@ enum PauseLevel {
     Critical
 }
 
-interface ISMSDataHub {
-    function getAdmin() external view returns (address);
-    function getMinter() external view returns (address);
-    function getSMS() external view returns (address);
-    function getOmnichainAdapter() external view returns (address);
+interface ISMSDataHub is IAccessControl {
+    function SMS_MINTER_ROLE() external view returns (bytes32);
+    function SMS_CROSSCHAIN_MINTER_ROLE() external view returns (bytes32);
 
-    function setAdmin(address _admin) external;
-    function setMinter(address _minter) external;
+    function getSMS() external view returns (address);
     function setSMS(address _sms) external;
-    function setOmnichainAdapter(address _omnichainAdapter) external;
 
     function getPauseLevel() external view returns (PauseLevel);
     function setPauseLevel(PauseLevel _pauseLevel) external;
 
     event PauseLevelChanged(PauseLevel pauseLevel);
-
-    event AdminChanged(address admin);
-    event MinterChanged(address minter);
 
     error AlreadySet();
 }

@@ -7,6 +7,8 @@ import {ISMSDataHub, ISMSDataHubMainChain, PauseLevel} from "./interface/ISMSDat
 import {PausableUpgradeable} from
     "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 
+import {AccessControlUpgradeable} from
+    "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {SMSOmnichainAdapter} from "./SMSOmnichainAdapter.sol";
 
@@ -18,64 +20,37 @@ import {SMSOmnichainAdapter} from "./SMSOmnichainAdapter.sol";
  * All contracts communicate with this contract through the `SMSDataHubKeeper` extension.
  * Admin of this contracts its also the admin of all other contracts.
  */
-contract SMSDataHub is ISMSDataHub, UUPSUpgradeable, Base {
+contract SMSDataHub is ISMSDataHub, UUPSUpgradeable, Base, AccessControlUpgradeable {
     /* ======== STATE ======== */
 
-    address private omnichainAdapter;
-    address private admin;
-    address private minter;
-    address private sms;
+    PauseLevel internal pauseLevel;
+
+    address internal sms;
     address internal mms; // mms variable declared here to avoid slot collision on future upgrades
 
-    PauseLevel private pauseLevel;
+    bytes32 public constant SMS_MINTER_ROLE = keccak256("SMS_MINTER_ROLE");
+    bytes32 public constant SMS_CROSSCHAIN_MINTER_ROLE = keccak256("SMS_CROSSCHAIN_MINTER_ROLE");
 
     /* ======== INITIALIZER ======== */
 
     /**
      * @notice Initializes the contract.
      * @param _admin The admin address.
-     * @param _minter The minter address.
      */
-    function initialize(address _admin, address _minter)
-        external
-        initializer
-        noZeroAddress(_admin)
-        noZeroAddress(_minter)
-    {
+    function initialize(address _admin) external initializer noZeroAddress(_admin) {
         __UUPSUpgradeable_init();
-        admin = _admin;
-        minter = _minter;
+        __AccessControl_init();
+        _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         pauseLevel = PauseLevel.None;
     }
 
     /* ======== VIEW ======== */
 
     /**
-     * @notice Returns the admin address.
-     */
-    function getAdmin() public view returns (address) {
-        return admin;
-    }
-
-    /**
-     * @notice Returns the minter address.
-     */
-    function getMinter() public view returns (address) {
-        return minter;
-    }
-
-    /**
      * @notice Returns the SMS address.
      */
     function getSMS() public view returns (address) {
         return sms;
-    }
-
-    /**
-     * @notice Returns the omnichain adapter address.
-     */
-    function getOmnichainAdapter() public view returns (address) {
-        return omnichainAdapter;
     }
 
     /**
@@ -92,42 +67,8 @@ contract SMSDataHub is ISMSDataHub, UUPSUpgradeable, Base {
      * @notice Does not emit events because it's happened only once.
      * @dev Address can be set only once.
      */
-    function setSMS(address _sms) public noZeroAddress(_sms) onlyAdmin onlyUnset(sms) {
+    function setSMS(address _sms) public noZeroAddress(_sms) onlyDefaultAdmin onlyUnset(sms) {
         sms = _sms;
-    }
-
-    /**
-     * @notice Sets the omnichain adapter address.
-     * @notice Does not emit events because it's happened only once.
-     * @dev Address can be set only once.
-     */
-    function setOmnichainAdapter(address _omnichainAdapter)
-        public
-        noZeroAddress(_omnichainAdapter)
-        onlyAdmin
-    {
-        omnichainAdapter = _omnichainAdapter;
-    }
-
-    /**
-     * @notice Sets the admin address.
-     * @notice Emits AdminChanged event.
-     * @dev Address can be changed.
-     */
-    function setAdmin(address _admin) public onlyAdmin {
-        admin = _admin;
-        SMSOmnichainAdapter(omnichainAdapter).setDelegate2(_admin);
-        emit AdminChanged(_admin);
-    }
-
-    /**
-     * @notice Sets the minter address.
-     * @notice Emits MinterChanged event.
-     * @dev Address can be changed.
-     */
-    function setMinter(address _minter) public onlyAdmin {
-        minter = _minter;
-        emit MinterChanged(_minter);
     }
 
     /**
@@ -135,7 +76,7 @@ contract SMSDataHub is ISMSDataHub, UUPSUpgradeable, Base {
      * @notice Emits PauseLevelChanged event.
      * @dev Pause level can be changed.
      */
-    function setPauseLevel(PauseLevel _pauseLevel) public onlyAdmin {
+    function setPauseLevel(PauseLevel _pauseLevel) public onlyDefaultAdmin {
         pauseLevel = _pauseLevel;
         emit PauseLevelChanged(_pauseLevel);
     }
@@ -147,12 +88,12 @@ contract SMSDataHub is ISMSDataHub, UUPSUpgradeable, Base {
      * @dev Inherits from UUPSUpgradeable.
      * @dev Only the admin can authorize the upgrade.
      */
-    function _authorizeUpgrade(address) internal override onlyAdmin {}
+    function _authorizeUpgrade(address) internal override onlyDefaultAdmin {}
 
     /* ======== MODIFIER ======== */
 
-    modifier onlyAdmin() {
-        if (msg.sender != getAdmin()) revert Unauthorized();
+    modifier onlyDefaultAdmin() {
+        if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) revert Unauthorized();
         _;
     }
 
@@ -183,7 +124,7 @@ contract SMSDataHubMainChain is ISMSDataHubMainChain, SMSDataHub {
      * @notice Does not emit events because it's happened only once.
      * @dev Address can be set only once.
      */
-    function setMMS(address _mms) public noZeroAddress(_mms) onlyAdmin onlyUnset(mms) {
+    function setMMS(address _mms) public noZeroAddress(_mms) onlyDefaultAdmin onlyUnset(mms) {
         mms = _mms;
     }
 }

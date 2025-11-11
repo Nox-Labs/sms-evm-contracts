@@ -88,7 +88,7 @@ contract SMS is ISMS, Blacklistable, SMSDataHubKeeper, UUPSUpgradeable, ERC20Per
      */
     function mint(address to, uint256 amount)
         public
-        onlyAdapter
+        onlyCrossChainMinter
         noZeroAmount(amount)
         noPauseLevel(PauseLevel.High)
     {
@@ -103,7 +103,7 @@ contract SMS is ISMS, Blacklistable, SMSDataHubKeeper, UUPSUpgradeable, ERC20Per
      */
     function burn(uint256 amount)
         public
-        onlyAdapter
+        onlyCrossChainMinter
         noZeroAmount(amount)
         noPauseLevel(PauseLevel.High)
     {
@@ -179,7 +179,10 @@ contract SMS is ISMS, Blacklistable, SMSDataHubKeeper, UUPSUpgradeable, ERC20Per
     ) public override {
         ISMSDataHub smsDataHub = getSMSDataHub();
 
-        if (smsDataHub.getPauseLevel() >= PauseLevel.Low && smsDataHub.getMinter() != msg.sender) {
+        if (
+            smsDataHub.getPauseLevel() >= PauseLevel.Low
+                && !smsDataHub.hasRole(smsDataHub.SMS_MINTER_ROLE(), msg.sender)
+        ) {
             revert Paused();
         }
 
